@@ -6,9 +6,9 @@ import (
 
 // RepositoryUser 用户数据操作接口
 type RepositoryUser interface {
-	Create(user *User) error
-	GetByID(id uint) (*User, error)
-	GetAll() ([]User, error)
+	Create(user *Users) error
+	GetByID(id uint) (*Users, error)
+	GetAll() ([]Users, error)
 	Delete(id uint) error
 }
 
@@ -20,20 +20,20 @@ func NewUserRepository(db *gorm.DB) RepositoryUser {
 	return &userRepositoryImpl{db: db}
 }
 
-func (r *userRepositoryImpl) Create(user *User) error {
+func (r *userRepositoryImpl) Create(user *Users) error {
 	return r.db.Create(user).Error
 }
 
-func (r *userRepositoryImpl) GetByID(id uint) (*User, error) {
-	var user User
+func (r *userRepositoryImpl) GetByID(id uint) (*Users, error) {
+	var user Users
 	if err := r.db.First(&user, id).Error; err != nil {
 		return nil, err
 	}
 	return &user, nil
 }
 
-func (r *userRepositoryImpl) GetAll() ([]User, error) {
-	var users []User
+func (r *userRepositoryImpl) GetAll() ([]Users, error) {
+	var users []Users
 	if err := r.db.Find(&users).Error; err != nil {
 		return nil, err
 	}
@@ -41,5 +41,5 @@ func (r *userRepositoryImpl) GetAll() ([]User, error) {
 }
 
 func (r *userRepositoryImpl) Delete(id uint) error {
-	return r.db.Delete(&User{}, id).Error
+	return r.db.Delete(&Users{}, id).Error
 }

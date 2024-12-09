@@ -14,5 +14,9 @@ func NewUserService(repo user.RepositoryUser) *UserService {
 
 // GetUserDetail 示例方法
 func (s *UserService) GetUserDetail(userID int) string {
-	return "User detail for ID: " + string(userID)
+	id, err := s.repo.GetByID(uint(userID))
+	if err != nil {
+		return "error"
+	}
+	return id.UserName
 }

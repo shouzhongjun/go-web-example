@@ -7,7 +7,7 @@ import (
 // RepositoryUser 用户数据操作接口
 type RepositoryUser interface {
 	Create(user *Users) error
-	GetByID(id uint) (*Users, error)
+	GetByID(id uint64) (*Users, error)
 	GetAll() ([]Users, error)
 	Delete(id uint) error
 }
@@ -24,7 +24,7 @@ func (r *userRepositoryImpl) Create(user *Users) error {
 	return r.db.Create(user).Error
 }
 
-func (r *userRepositoryImpl) GetByID(id uint) (*Users, error) {
+func (r *userRepositoryImpl) GetByID(id uint64) (*Users, error) {
 	var user Users
 	if err := r.db.First(&user, id).Error; err != nil {
 		return nil, err

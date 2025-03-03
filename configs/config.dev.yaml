@@ -1,0 +1,35 @@
+model:
+  dev
+
+server:
+  serverName: go-server-rest-api
+  httpPort: 8080
+
+log:
+  level: info
+  path: ./logs
+
+database:
+  host: localhost
+  port: 3306
+  user: root
+  password: root
+  dbname: dev
+  sslmode: disable
+  maxIdleConns: 10
+  maxOpenConns: 10
+  connMaxLifetime: 5m
+
+redis:
+  host: localhost
+  port: 6379
+  password: ""
+  db: 0
+  maxIdleConns: 10
+  maxActiveConns: 10
+
+etcd:
+  host: localhost
+  port: 2379
+  password: ""
+

@@ -1,49 +1,60 @@
 package app
 
 import (
-	"fmt"
 	"github.com/gin-gonic/gin"
-	"github.com/go-redis/redis/v8"
-	"github.com/segmentio/kafka-go"
+	"github.com/google/wire"
+	"go.uber.org/zap"
+	"goWebExample/api/rest"
+	"goWebExample/internal/middleware"
+	"goWebExample/internal/pkg/db"
+	myZap "goWebExample/internal/pkg/zap"
+	"goWebExample/internal/repository/user"
 	"goWebExample/internal/service/user_service"
-	"gorm.io/gorm"
 )
 
-type App struct {
-	DB          *gorm.DB
-	Redis       *redis.Client
-	Kafka       *kafka.Writer
-	UserService *user_service.UserService
+// NewGin 创建并配置一个新的 Gin 引擎实例
+func NewGin(logger *zap.Logger) *gin.Engine {
+	engine := gin.New()
+	// 加载中间件
+	middleware.LoadMiddleware(logger, engine)
+	return engine
 }
 
-// NewApp 是 *App 的构造函数，接收所有依赖项作为参数
-func NewApp(db *gorm.DB, redis *redis.Client, kafka *kafka.Writer, userService *user_service.UserService) *App {
-	return &App{
-		DB:          db,
-		Redis:       redis,
-		Kafka:       kafka,
-		UserService: userService,
-	}
-}
+// 中间件相关依赖
 
-// Run 是应用启动的逻辑
-func (a *App) Run() {
-	// 启动应用的逻辑，比如启动 HTTP 服务器、任务队列等
-	art := `
-           __        __   _     _____                           _      
-   __ _  __\ \      / /__| |__ | ____|_  ____ _ _ __ ___  _ __ | | ___ 
-  / _` + "`" + ` |/ _ \ \ /\ / / _ \ '_ \|  _| \ \/ / _` + "`" + ` | '_ ` + "`" + ` _ \| '_ \| |/ _ \
- | (_| | (_) \ V  V /  __/ |_) | |___ >  < (_| | | | | | | |_) | |  __/
-  \__, |\___/ \_/\_/ \___|_.__/|_____/_/\_\__,_|_| |_| |_| .__/|_|\___|
-  |___/                                                  |_|           
-`
-	fmt.Print(art)
-	gin.SetMode(gin.DebugMode)
-	r := gin.Default()
-	r.GET("/ping", func(c *gin.Context) {
-		c.JSON(200, gin.H{
-			"message": "pong",
-		})
-	})
-	r.Run(":8080")
-}
+// DatabaseSet 数据库相关依赖
+var DatabaseSet = wire.NewSet(db.NewGormConfig)
+
+// LoggerSet 日志相关依赖
+var LoggerSet = wire.NewSet(
+	myZap.NewZap,
+)
+
+// 业务模块相关依赖
+
+var (
+	// RepositorySet 仓储层依赖
+	RepositorySet = wire.NewSet(
+		user.NewUserRepository,
+		// 其他仓储
+	)
+
+	// ServiceSet 服务层依赖
+	ServiceSet = wire.NewSet(
+		user_service.NewUserService,
+		// 其他服务
+	)
+
+	// ApiSet API层依赖
+	ApiSet = wire.NewSet(
+		rest.NewUserApi,
+		// 其他API
+	)
+
+	// ProviderSet 汇总所有依赖
+	ProviderSet = wire.NewSet(
+		RepositorySet,
+		ServiceSet,
+		ApiSet,
+	)
+)

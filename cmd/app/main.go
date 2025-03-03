@@ -1,22 +1,13 @@
 package main
 
 import (
-	"fmt"
-	"goWebExample/internal/app"
+	"goWebExample/internal/configs"
 )
 
 func main() {
-	art := `
-           __        __   _     _____                           _      
-   __ _  __\ \      / /__| |__ | ____|_  ____ _ _ __ ___  _ __ | | ___ 
-  / _` + "`" + ` |/ _ \ \ /\ / / _ \ '_ \|  _| \ \/ / _` + "`" + ` | '_ ` + "`" + ` _ \| '_ \| |/ _ \
- | (_| | (_) \ V  V /  __/ |_) | |___ >  < (_| | | | | | | |_) | |  __/
-  \__, |\___/ \_/\_/ \___|_.__/|_____/_/\_\__,_|_| |_| |_| .__/|_|\___|
-  |___/                                                  |_|           
-`
-	fmt.Print(art)
 
-	initApp := app.InitApp()
-	initApp.Run()
+	config := configs.ReadConfig(configs.ConfigPath)
+	wireApp := WireApp(config)
+	wireApp.RunServer()
 
 }

@@ -1,18 +1,21 @@
 package rest
 
 import (
-	"github.com/gin-gonic/gin"
 	"goWebExample/internal/service/user_service"
+
+	"github.com/gin-gonic/gin"
 )
 
-// UserApi 提供用户相关的 API
+// UserApi 是用户相关API的处理结构体
 type UserApi struct {
 	service *user_service.UserService
 }
 
 // NewUserApi 创建 UserApi 实例
 func NewUserApi(service *user_service.UserService) *UserApi {
-	return &UserApi{service: service}
+	return &UserApi{
+		service: service,
+	}
 }
 
 // GetUserDetail 获取用户详情

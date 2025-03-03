@@ -2,12 +2,13 @@ package redis
 
 import (
 	"github.com/go-redis/redis/v8"
+	"goWebExample/internal/configs"
 )
 
-func ProvideRedisClient(config *RedisConfig) *redis.Client {
+func NewRedisClient(config *configs.AllConfig) *redis.Client {
 	return redis.NewClient(&redis.Options{
-		Addr:     config.Addr,
-		Password: config.Password,
-		DB:       config.DB,
+		Addr:     config.Redis.GetAddr(),
+		Password: config.Redis.Password,
+		DB:       config.Redis.Db,
 	})
 }

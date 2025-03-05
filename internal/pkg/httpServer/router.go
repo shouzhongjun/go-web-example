@@ -1,23 +1,23 @@
 package httpServer
 
 import (
-	"goWebExample/api/rest"
+	"goWebExample/api/rest/handlers"
 
 	"github.com/gin-gonic/gin"
 )
 
 // Router 路由管理器
 type Router struct {
-	engine  *gin.Engine
-	userApi *rest.UserApi
-	// 其他 API 控制器
+	engine      *gin.Engine
+	userHandler *handlers.UserHandler
+	// 其他 Handler
 }
 
 // NewRouter 创建路由管理器
-func NewRouter(engine *gin.Engine, userApi *rest.UserApi) *Router {
+func NewRouter(engine *gin.Engine, userHandler *handlers.UserHandler) *Router {
 	return &Router{
-		engine:  engine,
-		userApi: userApi,
+		engine:      engine,
+		userHandler: userHandler,
 	}
 }
 
@@ -26,17 +26,11 @@ func (r *Router) Register() {
 	// API 路由组
 	apiGroup := r.engine.Group("/api")
 
-	// 注册用户相关路由
-	r.registerUserRoutes(apiGroup)
+	// 让各个Handler注册自己的路由
+	r.userHandler.RegisterRoutes(apiGroup)
 
-	// 可以添加其他路由组的注册方法
+	// 可以添加其他Handler的路由注册
+	// r.otherHandler.RegisterRoutes(apiGroup)
 }
 
-// registerUserRoutes 注册用户相关路由
-func (r *Router) registerUserRoutes(apiGroup *gin.RouterGroup) {
-	userGroup := apiGroup.Group("/users")
-	{
-		userGroup.GET("/:userId", r.userApi.GetUserDetail)
-		// 其他用户相关路由
-	}
-}
+// 移除了registerUserRoutes方法，因为路由注册逻辑已经移至UserHandler

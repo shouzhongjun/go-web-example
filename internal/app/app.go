@@ -1,15 +1,16 @@
 package app
 
 import (
-	"github.com/gin-gonic/gin"
-	"github.com/google/wire"
-	"go.uber.org/zap"
-	"goWebExample/api/rest"
+	"goWebExample/api/rest/handlers"
 	"goWebExample/internal/middleware"
 	"goWebExample/internal/pkg/db"
 	myZap "goWebExample/internal/pkg/zap"
 	"goWebExample/internal/repository/user"
 	"goWebExample/internal/service/user_service"
+
+	"github.com/gin-gonic/gin"
+	"github.com/google/wire"
+	"go.uber.org/zap"
 )
 
 // NewGin 创建并配置一个新的 Gin 引擎实例
@@ -45,16 +46,16 @@ var (
 		// 其他服务
 	)
 
-	// ApiSet API层依赖
-	ApiSet = wire.NewSet(
-		rest.NewUserApi,
-		// 其他API
+	// HandlerSet Handler层依赖
+	HandlerSet = wire.NewSet(
+		handlers.NewUserHandler,
+		// 其他Handler
 	)
 
 	// ProviderSet 汇总所有依赖
 	ProviderSet = wire.NewSet(
 		RepositorySet,
 		ServiceSet,
-		ApiSet,
+		HandlerSet,
 	)
 )

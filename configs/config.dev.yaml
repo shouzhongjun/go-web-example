@@ -6,6 +6,9 @@ server:
   httpPort: 8080
 
 log:
+  prefix: go-server-rest-api
+  enableConsole: true
+  enableFile: true
   level: info
   path: ./logs
 

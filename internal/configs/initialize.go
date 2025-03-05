@@ -30,8 +30,11 @@ type AllConfig struct {
 
 // Log 日志配置
 type Log struct {
-	Level string `yaml:"level"`
-	Path  string `yaml:"path"`
+	Level         string `yaml:"level"`
+	EnableFile    bool   `yaml:"enableFile"`
+	EnableConsole bool   `yaml:"enableConsole"`
+	Prefix        string `yaml:"prefix"`
+	Path          string `yaml:"path"`
 }
 
 // Database 数据库配置

@@ -4,9 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"goWebExample/api/rest"
-	"goWebExample/internal/configs"
-	"goWebExample/pkg/utils"
 	"net/http"
 	"os"
 	"os/signal"
@@ -16,6 +13,9 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
+
+	"goWebExample/internal/configs"
+	"goWebExample/pkg/utils"
 )
 
 // HttpServer 封装HTTP服务器及其依赖
@@ -25,12 +25,24 @@ type HttpServer struct {
 	Logger    *zap.Logger
 	DB        *gorm.DB
 	Router    *Router
-	UserApi   *rest.UserApi
 }
 
 // NewHttpServer 创建一个新的HttpServer实例
-func NewHttpServer(config *configs.AllConfig, logger *zap.Logger, db *gorm.DB, engine *gin.Engine, router *Router, userApi *rest.UserApi) *HttpServer {
-	server := &HttpServer{AllConfig: config, Engine: engine, Logger: logger, DB: db, Router: router, UserApi: userApi}
+func NewHttpServer(
+	config *configs.AllConfig,
+	logger *zap.Logger,
+	db *gorm.DB,
+	engine *gin.Engine,
+	router *Router,
+) *HttpServer {
+	server := &HttpServer{
+		AllConfig: config,
+		Engine:    engine,
+		Logger:    logger,
+		DB:        db,
+		Router:    router,
+	}
+
 	// 注册路由
 	server.Router.Register()
 

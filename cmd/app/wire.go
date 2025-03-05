@@ -25,7 +25,7 @@ func WireApp(config *configs.AllConfig) *httpServer.HttpServer {
 		// 添加 Router 的 provider
 		httpServer.NewRouter,
 
-		// 使用 NewHttpServer 替代 wire.Struct
+		// 使用 NewHttpServer
 		httpServer.NewHttpServer,
 	)
 	return &httpServer.HttpServer{}

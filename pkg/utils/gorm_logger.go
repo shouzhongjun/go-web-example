@@ -60,11 +60,11 @@ func (l *ZapLogger) Trace(ctx context.Context, begin time.Time, fc func() (sql s
 	sql, rows := fc()
 
 	if requestID, ok := ctx.Value("request_id").(string); ok {
-		logger := l.zapLogger.Sugar().With("request_id", requestID)
+		sugaredLogger := l.zapLogger.Sugar().With("request_id", requestID)
 		if err != nil {
-			logger.Errorf("[SQL] %s | %s | rows: %d | err: %v", elapsed, sql, rows, err)
+			sugaredLogger.Errorf("[SQL] %s | %s | rows: %d | err: %v", elapsed, sql, rows, err)
 		} else {
-			logger.Debugf("[SQL] %s | %s | rows: %d", elapsed, sql, rows)
+			sugaredLogger.Debugf("[SQL] %s | %s | rows: %d", elapsed, sql, rows)
 		}
 	} else {
 		if err != nil {

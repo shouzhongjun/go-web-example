@@ -6,7 +6,6 @@ package main
 import (
 	"goWebExample/internal/app"
 	"goWebExample/internal/configs"
-	"goWebExample/internal/pkg/etcd"
 	"goWebExample/internal/pkg/httpServer"
 
 	"github.com/google/wire"

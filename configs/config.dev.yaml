@@ -35,7 +35,7 @@ etcd:
   host: localhost
   port: 2379
   password: ""
-  dialTimeOut: 5
+  dialTimeOut: 50
   username: ""
-  ttl: 5
+  leaseTTL: 5
 

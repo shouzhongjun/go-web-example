@@ -87,7 +87,7 @@ type Etcd struct {
 	DialTimeOut int64  `yaml:"dialTimeOut"`
 	Username    string `yaml:"username"`
 	Password    string `yaml:"password"`
-	TTL         int64  `yaml:"ttl"`
+	LeaseTTL    int64  `yaml:"leaseTTL"`
 }
 
 // GetAddr 获取Etcd地址

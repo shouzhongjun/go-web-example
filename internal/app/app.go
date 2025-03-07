@@ -6,6 +6,7 @@ import (
 	"goWebExample/internal/pkg/db"
 	myZap "goWebExample/internal/pkg/zap"
 	"goWebExample/internal/repository/user"
+	"goWebExample/internal/service/datacenter_service"
 	"goWebExample/internal/service/user_service"
 
 	"github.com/gin-gonic/gin"
@@ -45,12 +46,14 @@ var (
 	// ServiceSet 服务层依赖
 	ServiceSet = wire.NewSet(
 		user_service.NewUserService,
+		datacenter_service.NewMockDataCenter,
 		// 其他服务
 	)
 
 	// HandlerSet Handler层依赖
 	HandlerSet = wire.NewSet(
 		handlers.NewUserHandler,
+		handlers.NewDataCenterHandler,
 		// 其他Handler
 	)
 

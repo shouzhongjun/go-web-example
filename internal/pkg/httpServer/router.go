@@ -8,16 +8,18 @@ import (
 
 // Router 路由管理器
 type Router struct {
-	engine      *gin.Engine
-	userHandler *handlers.UserHandler
+	engine            *gin.Engine
+	userHandler       *handlers.UserHandler
+	dataCenterHandler *handlers.DataCenterHandler
 	// 其他 Handler
 }
 
 // NewRouter 创建路由管理器
-func NewRouter(engine *gin.Engine, userHandler *handlers.UserHandler) *Router {
+func NewRouter(engine *gin.Engine, userHandler *handlers.UserHandler, dataCenterHandler *handlers.DataCenterHandler) *Router {
 	return &Router{
-		engine:      engine,
-		userHandler: userHandler,
+		engine:            engine,
+		userHandler:       userHandler,
+		dataCenterHandler: dataCenterHandler,
 	}
 }
 

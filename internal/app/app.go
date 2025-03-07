@@ -4,6 +4,7 @@ import (
 	"goWebExample/api/rest/handlers"
 	"goWebExample/internal/middleware"
 	"goWebExample/internal/pkg/db"
+	"goWebExample/internal/pkg/httpServer"
 	myZap "goWebExample/internal/pkg/zap"
 	"goWebExample/internal/repository/user"
 	"goWebExample/internal/service/datacenter_service"
@@ -55,6 +56,11 @@ var (
 		handlers.NewUserHandler,
 		handlers.NewDataCenterHandler,
 		// 其他Handler
+	)
+
+	// RouterSet 路由相关依赖
+	RouterSet = wire.NewSet(
+		wire.Struct(new(httpServer.Router), "*"),
 	)
 
 	// ProviderSet 汇总所有依赖

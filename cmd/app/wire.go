@@ -23,8 +23,7 @@ func WireApp(config *configs.AllConfig) *httpServer.HttpServer {
 		// 使用 app.NewGin 而不是 gin.Default
 		app.NewGin,
 
-		// 添加 Router 的 provider
-		httpServer.NewRouter,
+		app.RouterSet,
 
 		// 添加 etcd 的 provider
 		etcd.NewServiceRegistry,

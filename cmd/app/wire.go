@@ -6,6 +6,7 @@ package main
 import (
 	"goWebExample/internal/app"
 	"goWebExample/internal/configs"
+	"goWebExample/internal/pkg/etcd"
 	"goWebExample/internal/pkg/httpServer"
 
 	"github.com/google/wire"
@@ -24,6 +25,9 @@ func WireApp(config *configs.AllConfig) *httpServer.HttpServer {
 
 		// 添加 Router 的 provider
 		httpServer.NewRouter,
+
+		// 添加 etcd 的 provider
+		etcd.NewServiceRegistry,
 
 		// 使用 NewHttpServer
 		httpServer.NewHttpServer,

@@ -24,7 +24,7 @@ type AllConfig struct {
 	Log      Log         `yaml:"log"`
 	Database Database    `yaml:"database"`
 	Redis    Redis       `yaml:"redis"`
-	Etcd     Etcd        `yaml:"etcd"`
+	Etcd     *Etcd       `yaml:"etcd"`
 	Kafka    KafkaConfig `yaml:"kafka"`
 }
 
@@ -82,14 +82,22 @@ func (r *Redis) GetAddr() string {
 
 // Etcd 配置
 type Etcd struct {
-	Password string `yaml:"password"`
-	Host     string `yaml:"host"`
-	Port     int    `yaml:"port"`
+	Host        string `yaml:"host"`
+	Port        int64  `yaml:"port"`
+	DialTimeOut int64  `yaml:"dialTimeOut"`
+	Username    string `yaml:"username"`
+	Password    string `yaml:"password"`
+	TTL         int64  `yaml:"ttl"`
 }
 
 // GetAddr 获取Etcd地址
 func (e *Etcd) GetAddr() string {
 	return fmt.Sprintf("%s:%d", e.Host, e.Port)
+}
+
+func (e *Etcd) DialTimeout() time.Duration {
+	return time.Duration(e.DialTimeOut)
+
 }
 
 // Server 服务器配置
@@ -178,11 +186,7 @@ func getDefaultConfig() *AllConfig {
 			MaxIdleConns:   10,
 			MaxActiveConns: 100,
 		},
-		Etcd: Etcd{
-			Host:     "localhost",
-			Port:     2379,
-			Password: "",
-		},
+
 		Kafka: KafkaConfig{
 			Brokers:   []string{"localhost:9092"},
 			Topic:     "default-topic",

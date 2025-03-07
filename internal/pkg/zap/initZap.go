@@ -61,13 +61,29 @@ func newZapLogger(env string, logPath string) (*zap.Logger, error) {
 		return nil, fmt.Errorf("failed to create logs directory: %v", err)
 	}
 
-	logFilePath := fmt.Sprintf("%s/app.log", logPath)
+	// 创建不同级别的日志文件路径
+	infoLogPath := fmt.Sprintf("%s/info.log", logPath)
+	errorLogPath := fmt.Sprintf("%s/error.log", logPath)
+
+	// 创建多个 Core
 	core := zapcore.NewTee(
-		zapcore.NewCore(encoder, zapcore.AddSync(os.Stdout), level),
-		zapcore.NewCore(encoder, getLogWriter(logFilePath), zapcore.InfoLevel),
+		zapcore.NewCore(encoder, zapcore.AddSync(os.Stdout), level),              // 控制台输出
+		zapcore.NewCore(encoder, getLogWriter(infoLogPath), zapcore.InfoLevel),   // Info 级别日志文件
+		zapcore.NewCore(encoder, getLogWriter(errorLogPath), zapcore.ErrorLevel), // Error 级别日志文件
 	)
 
 	return zap.New(core, zap.AddCaller(), zap.AddCallerSkip(1)), nil
+}
+
+// getLogWriter 获取日志文件写入器
+func getLogWriter(filePath string) zapcore.WriteSyncer {
+	file, err := os.OpenFile(filePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
+	if err != nil {
+		// 如果无法打开日志文件，回退到标准错误输出
+		fmt.Fprintf(os.Stderr, "无法打开日志文件 %s: %v\n", filePath, err)
+		return zapcore.AddSync(os.Stderr)
+	}
+	return zapcore.AddSync(file)
 }
 
 // getEncoder 获取日志编码器
@@ -107,18 +123,4 @@ func findProjectPath(path string) int {
 	}
 
 	return idx
-}
-
-// getLogWriter 获取日志文件写入器
-func getLogWriter(filePath string) zapcore.WriteSyncer {
-	file, err := os.OpenFile(filePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
-	if err != nil {
-		// 如果无法打开日志文件，回退到标准错误输出
-		_, err := fmt.Fprintf(os.Stderr, "无法打开日志文件: %v\n", err)
-		if err != nil {
-			return nil
-		}
-		return zapcore.AddSync(os.Stderr)
-	}
-	return zapcore.AddSync(file)
 }

@@ -23,8 +23,10 @@ func NewGin(logger *zap.Logger) *gin.Engine {
 
 // 中间件相关依赖
 
-// DatabaseSet 数据库相关依赖
-var DatabaseSet = wire.NewSet(db.NewGormConfig)
+var (
+	// DatabaseSet 数据库相关依赖
+	DatabaseSet = wire.NewSet(db.NewGormConfig)
+)
 
 // LoggerSet 日志相关依赖
 var LoggerSet = wire.NewSet(

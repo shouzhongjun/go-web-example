@@ -23,7 +23,9 @@ database:
   ssl_mode: disable
   maxIdleConns: 10
   maxOpenConns: 10
-  connMaxLifetime: 5m
+  connMaxLifetime: 5
+  logLevel: error
+  trace: false
 
 redis:
   host: localhost

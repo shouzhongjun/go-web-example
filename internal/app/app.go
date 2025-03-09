@@ -30,7 +30,7 @@ func NewGin(logger *zap.Logger) *gin.Engine {
 
 var (
 	// DatabaseSet 数据库相关依赖
-	DatabaseSet = wire.NewSet(db.NewGormConfig)
+	DatabaseSet = wire.NewSet(db.NewDB)
 
 	// LoggerSet 日志相关依赖
 	LoggerSet = wire.NewSet(

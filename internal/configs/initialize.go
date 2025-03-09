@@ -41,28 +41,25 @@ type Log struct {
 type Database struct {
 	SSLMode         string `yaml:"ssl_mode"`
 	MaxOpenConns    int    `yaml:"maxOpen_conns"`
-	ConnMaxLifetime string `yaml:"connMaxLifetime"`
+	ConnMaxLifetime *int64 `yaml:"connMaxLifetime"`
 	Host            string `yaml:"host"`
 	User            string `yaml:"user"`
 	Password        string `yaml:"password"`
 	Port            int    `yaml:"port"`
 	DBName          string `yaml:"dbname"`
 	MaxIdleConns    int    `yaml:"maxIdleConns"`
+	LogLevel        string `yaml:"logLevel"`
+	Trace           bool   `yaml:"trace"`
 }
 
-// Dsn 获取数据库连接字符串
-func (db *Database) Dsn() string {
+// DSN 获取数据库连接字符串
+func (db *Database) DSN() string {
 	// mysql dsn
 	return fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8mb4&parseTime=True&loc=Local",
 		db.User, db.Password, db.Host, db.Port, db.DBName)
 
 	//return fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%d sslmode=%s",
 	//	db.Host, db.User, db.Password, db.DBName, db.Port, db.SSLMode)
-}
-
-// GetConnMaxLifetime 获取连接最大生命周期
-func (db *Database) GetConnMaxLifetime() (time.Duration, error) {
-	return time.ParseDuration(db.ConnMaxLifetime)
 }
 
 // Redis 缓存配置
@@ -123,8 +120,8 @@ func ReadConfig(configPath string) *AllConfig {
 
 		// 尝试创建默认配置文件
 		if os.IsNotExist(err) {
-			log.Printf("配置文件不存在，将使用默认配置")
-			return getDefaultConfig()
+			log.Fatalf("配置文件不存在，服务停止")
+			return nil
 		}
 
 		log.Fatalf("配置文件格式不正确: %s", err)
@@ -157,45 +154,4 @@ func (k *KafkaConfig) KafkaBrokers() []string {
 // KafkaDSN 获取Kafka连接字符串
 func (k *KafkaConfig) KafkaDSN() string {
 	return strings.Join(k.KafkaBrokers(), ",")
-}
-
-// getDefaultConfig 获取默认配置
-func getDefaultConfig() *AllConfig {
-	return &AllConfig{
-		Server: Server{
-			ServerName: "goWebExample",
-			Port:       8080,
-		},
-		Log: Log{
-			Level: "debug",
-			Path:  "logs",
-		},
-		Database: Database{
-			Host:            "localhost",
-			Port:            5432,
-			User:            "postgres",
-			Password:        "postgres",
-			DBName:          "gowebexample",
-			SSLMode:         "disable",
-			MaxOpenConns:    10,
-			MaxIdleConns:    5,
-			ConnMaxLifetime: "1h",
-		},
-		Redis: Redis{
-			Host:           "localhost",
-			Port:           6379,
-			Password:       "",
-			Db:             0,
-			MaxIdleConns:   10,
-			MaxActiveConns: 100,
-		},
-
-		Kafka: KafkaConfig{
-			Brokers:   []string{"localhost:9092"},
-			Topic:     "default-topic",
-			GroupID:   "default-group",
-			BatchSize: 100,
-			Async:     true,
-		},
-	}
 }

@@ -88,6 +88,7 @@ type Etcd struct {
 	Username    string `yaml:"username"`
 	Password    string `yaml:"password"`
 	LeaseTTL    int64  `yaml:"leaseTTL"`
+	Enable      bool   `yaml:"enable"`
 }
 
 // GetAddr 获取Etcd地址

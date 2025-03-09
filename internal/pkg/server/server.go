@@ -4,7 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"goWebExample/internal/pkg/etcd"
+	"goWebExample/internal/pkg/service"
+	"goWebExample/pkg/infrastructure/etcd"
 	"net/http"
 	"os"
 	"os/signal"
@@ -27,6 +28,7 @@ type HTTPServer struct {
 	Router    *Router
 	registry  etcd.ServiceRegistry
 	Engine    *gin.Engine
+	services  map[string]service.Service // 服务注册表
 }
 
 // NewHTTPServer 创建一个新的HttpServer实例
@@ -36,21 +38,28 @@ func NewHTTPServer(
 	db *gorm.DB,
 	engine *gin.Engine,
 	router *Router,
-	registry etcd.ServiceRegistry, // 添加服务注册器参数
+	registry etcd.ServiceRegistry,
 ) *HTTPServer {
 	server := &HTTPServer{
 		AllConfig: config,
 		Logger:    logger,
 		DB:        db,
 		Router:    router,
-		registry:  registry, // 初始化服务注册器
+		registry:  registry,
 		Engine:    engine,
+		services:  make(map[string]service.Service),
 	}
 
 	// 注册路由
 	server.Router.Register()
 
 	return server
+}
+
+// RegisterService 注册服务
+func (s *HTTPServer) RegisterService(srv service.Service) {
+	s.services[srv.Name()] = srv
+	s.Logger.Info("服务已注册", zap.String("service", srv.Name()))
 }
 
 // RunServer 启动HTTP服务器
@@ -79,7 +88,40 @@ func (s *HTTPServer) RunServer() {
 		s.Logger.Warn("未配置数据库连接")
 	}
 
+	// 验证 etcd 服务注册
+	if s.registry != nil {
+		if err := s.registry.Register(context.Background()); err != nil {
+			s.Logger.Error("注册服务到Etcd失败", zap.Error(err))
+			return
+		}
+		s.Logger.Info("服务已成功注册到Etcd")
+	} else {
+		s.Logger.Warn("未配置Etcd服务注册")
+	}
+
+	// 初始化所有注册的服务
+	if err := s.initializeServices(); err != nil {
+		s.Logger.Error("初始化服务失败", zap.Error(err))
+		return
+	}
+
 	s.startServer()
+}
+
+// initializeServices 初始化所有注册的服务
+func (s *HTTPServer) initializeServices() error {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	for name, srv := range s.services {
+		s.Logger.Info("正在初始化服务", zap.String("service", name))
+		if err := srv.Initialize(ctx); err != nil {
+			s.Logger.Error("服务初始化失败", zap.String("service", name), zap.Error(err))
+			return fmt.Errorf("初始化服务 %s 失败: %w", name, err)
+		}
+		s.Logger.Info("服务初始化成功", zap.String("service", name))
+	}
+	return nil
 }
 
 // startServer 配置并启动HTTP服务器
@@ -115,7 +157,6 @@ func (s *HTTPServer) startServer() {
 
 	// 等待中断信号以优雅地关闭服务器
 	quit := make(chan os.Signal, 1)
-	// 监听 SIGINT, SIGTERM 信号
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
 	s.Logger.Info("正在关闭服务器...")
@@ -129,6 +170,9 @@ func (s *HTTPServer) startServer() {
 		}
 	}
 
+	// 关闭所有服务
+	s.closeServices()
+
 	// 创建一个5秒超时的上下文
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -139,4 +183,19 @@ func (s *HTTPServer) startServer() {
 	}
 
 	s.Logger.Info(s.AllConfig.Server.ServerName + " 已退出")
+}
+
+// closeServices 关闭所有服务
+func (s *HTTPServer) closeServices() {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	for name, srv := range s.services {
+		s.Logger.Info("正在关闭服务", zap.String("service", name))
+		if err := srv.Close(ctx); err != nil {
+			s.Logger.Error("关闭服务失败", zap.String("service", name), zap.Error(err))
+		} else {
+			s.Logger.Info("服务已关闭", zap.String("service", name))
+		}
+	}
 }

@@ -5,10 +5,10 @@ import (
 	"github.com/google/wire"
 	"go.uber.org/zap"
 	"goWebExample/internal/middleware"
-	"goWebExample/internal/pkg/db"
 	"goWebExample/internal/pkg/server"
 	internalzap "goWebExample/internal/pkg/zap"
 	initwire "goWebExample/internal/wire"
+	"goWebExample/pkg/infrastructure/db"
 )
 
 // NewGin 创建并配置一个新的 Gin 引擎实例

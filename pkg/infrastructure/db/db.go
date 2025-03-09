@@ -28,11 +28,6 @@ func NewDB(config *configs.AllConfig, zapLogger *zap.Logger) *gorm.DB {
 	// 打开数据库连接
 	zapLogger.Info("正在连接数据库", zap.String("dsn", maskDSN(config.Database.DSN())))
 	db, err := gorm.Open(mysql.Open(config.Database.DSN()), gormConfig)
-	if err != nil {
-		zapLogger.Fatal("数据库连接失败", zap.Error(err))
-		return nil
-	}
-
 	// 设置连接池参数
 	sqlDB, err := db.DB()
 	if err != nil {
@@ -52,10 +47,20 @@ func NewDB(config *configs.AllConfig, zapLogger *zap.Logger) *gorm.DB {
 		connMaxLifetime = time.Hour
 		zapLogger.Info("未设置连接最大生命周期，使用默认值", zap.Duration("默认值", connMaxLifetime))
 	} else {
-		connMaxLifetime = time.Duration(*config.Database.ConnMaxLifetime)
+		connMaxLifetime = time.Duration(*config.Database.ConnMaxLifetime) * time.Minute
 	}
 
 	sqlDB.SetConnMaxLifetime(connMaxLifetime)
+	sqlDB.SetMaxIdleConns(config.Database.MaxIdleConns)
+	var connMaxIdleTime time.Duration
+	if config.Database.ConnMaxIdleTime == nil {
+		connMaxIdleTime = time.Hour
+		zapLogger.Info("未设置连接最大空闲时间，使用默认值", zap.Duration("默认值", connMaxIdleTime))
+	} else {
+		connMaxIdleTime = time.Duration(*config.Database.ConnMaxIdleTime) * time.Minute
+	}
+
+	sqlDB.SetConnMaxIdleTime(connMaxIdleTime)
 
 	// 测试数据库连接
 	if err := sqlDB.Ping(); err != nil {
@@ -67,6 +72,7 @@ func NewDB(config *configs.AllConfig, zapLogger *zap.Logger) *gorm.DB {
 		zap.Int("最大空闲连接数", config.Database.MaxIdleConns),
 		zap.Int("最大打开连接数", config.Database.MaxOpenConns),
 		zap.Duration("连接最大生命周期", connMaxLifetime),
+		zap.Duration("连接最大空闲时间", connMaxIdleTime),
 	)
 
 	return db

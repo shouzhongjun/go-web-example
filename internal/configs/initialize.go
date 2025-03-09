@@ -50,6 +50,7 @@ type Database struct {
 	MaxIdleConns    int    `yaml:"maxIdleConns"`
 	LogLevel        string `yaml:"logLevel"`
 	Trace           bool   `yaml:"trace"`
+	ConnMaxIdleTime *int64 `yaml:"connMaxIdleTime"`
 }
 
 // DSN 获取数据库连接字符串

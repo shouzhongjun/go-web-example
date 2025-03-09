@@ -24,8 +24,9 @@ database:
   maxIdleConns: 10
   maxOpenConns: 10
   connMaxLifetime: 5
-  logLevel: error
-  trace: false
+  logLevel: warn
+  trace: true
+  connMaxIdleTime: 2
 
 redis:
   host: localhost

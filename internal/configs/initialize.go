@@ -50,8 +50,8 @@ type Database struct {
 	MaxIdleConns    int    `yaml:"maxIdleConns"`
 }
 
-// GetDSN 获取数据库连接字符串
-func (db *Database) GetDSN() string {
+// Dsn 获取数据库连接字符串
+func (db *Database) Dsn() string {
 	// mysql dsn
 	return fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8mb4&parseTime=True&loc=Local",
 		db.User, db.Password, db.Host, db.Port, db.DBName)
@@ -75,8 +75,8 @@ type Redis struct {
 	MaxIdleConns   int    `yaml:"maxIdleConns"`
 }
 
-// GetAddr 获取Redis地址
-func (r *Redis) GetAddr() string {
+// RedisAddr 获取Redis地址
+func (r *Redis) RedisAddr() string {
 	return fmt.Sprintf("%s:%d", r.Host, r.Port)
 }
 
@@ -91,8 +91,8 @@ type Etcd struct {
 	Enable      bool   `yaml:"enable"`
 }
 
-// GetAddr 获取Etcd地址
-func (e *Etcd) GetAddr() string {
+// EtcdAddr 获取Etcd地址
+func (e *Etcd) EtcdAddr() string {
 	return fmt.Sprintf("%s:%d", e.Host, e.Port)
 }
 
@@ -146,17 +146,17 @@ type KafkaConfig struct {
 	Async     bool     `yaml:"async"`
 }
 
-// GetBrokers 获取Kafka broker地址列表
-func (k *KafkaConfig) GetBrokers() []string {
+// KafkaBrokers 获取Kafka broker地址列表
+func (k *KafkaConfig) KafkaBrokers() []string {
 	if len(k.Brokers) == 0 {
 		return []string{"localhost:9092"}
 	}
 	return k.Brokers
 }
 
-// GetDSN 获取Kafka连接字符串
-func (k *KafkaConfig) GetDSN() string {
-	return strings.Join(k.GetBrokers(), ",")
+// KafkaDSN 获取Kafka连接字符串
+func (k *KafkaConfig) KafkaDSN() string {
+	return strings.Join(k.KafkaBrokers(), ",")
 }
 
 // getDefaultConfig 获取默认配置

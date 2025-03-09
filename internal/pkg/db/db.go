@@ -21,7 +21,7 @@ func NewGormConfig(config *configs.AllConfig, logger *zap.Logger) *gorm.DB {
 		},
 		DisableForeignKeyConstraintWhenMigrating: true,
 	}
-	db, err := gorm.Open(mysql.Open(config.Database.GetDSN()), g)
+	db, err := gorm.Open(mysql.Open(config.Database.Dsn()), g)
 	if err != nil {
 		log.Fatalf("数据库连接失败:%s", err)
 		return nil

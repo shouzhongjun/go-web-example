@@ -31,7 +31,7 @@ func NewKafka(config *configs.AllConfig, logger *zap.Logger) *KafkaClient {
 // createWriter 创建Kafka写入器
 func createWriter(config *configs.KafkaConfig) *kafka.Writer {
 	return &kafka.Writer{
-		Addr:         kafka.TCP(config.GetBrokers()...),
+		Addr:         kafka.TCP(config.KafkaBrokers()...),
 		Topic:        config.Topic,
 		Balancer:     &kafka.LeastBytes{},
 		BatchSize:    config.BatchSize,
@@ -47,7 +47,7 @@ func createWriter(config *configs.KafkaConfig) *kafka.Writer {
 // createReader 创建Kafka读取器
 func createReader(config *configs.KafkaConfig) *kafka.Reader {
 	return kafka.NewReader(kafka.ReaderConfig{
-		Brokers:        config.GetBrokers(),
+		Brokers:        config.KafkaBrokers(),
 		Topic:          config.Topic,
 		GroupID:        config.GroupID,
 		MinBytes:       10e3, // 10KB

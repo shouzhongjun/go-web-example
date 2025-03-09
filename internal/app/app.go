@@ -4,8 +4,8 @@ import (
 	"goWebExample/api/rest/handlers"
 	"goWebExample/internal/middleware"
 	"goWebExample/internal/pkg/db"
-	"goWebExample/internal/pkg/httpServer"
-	myZap "goWebExample/internal/pkg/zap"
+	"goWebExample/internal/pkg/server"
+	internalzap "goWebExample/internal/pkg/zap"
 	"goWebExample/internal/repository/user"
 	"goWebExample/internal/service/datacenter_service"
 	"goWebExample/internal/service/user_service"
@@ -17,27 +17,30 @@ import (
 
 // NewGin 创建并配置一个新的 Gin 引擎实例
 func NewGin(logger *zap.Logger) *gin.Engine {
+	// 根据配置文件日志级别，设置gin的模式
+	if logger.Core().Enabled(zap.DebugLevel) {
+		gin.SetMode(gin.DebugMode)
+	} else {
+		gin.SetMode(gin.ReleaseMode)
+	}
+
 	engine := gin.New()
 	// 加载中间件
 	middleware.LoadMiddleware(logger, engine)
 	return engine
 }
 
-// 中间件相关依赖
+// 依赖注入集合定义
 
 var (
 	// DatabaseSet 数据库相关依赖
 	DatabaseSet = wire.NewSet(db.NewGormConfig)
-)
 
-// LoggerSet 日志相关依赖
-var LoggerSet = wire.NewSet(
-	myZap.NewZap,
-)
+	// LoggerSet 日志相关依赖
+	LoggerSet = wire.NewSet(
+		internalzap.NewZap,
+	)
 
-// 业务模块相关依赖
-
-var (
 	// RepositorySet 仓储层依赖
 	RepositorySet = wire.NewSet(
 		user.NewUserRepository,
@@ -60,7 +63,7 @@ var (
 
 	// RouterSet 路由相关依赖
 	RouterSet = wire.NewSet(
-		wire.Struct(new(httpServer.Router), "*"),
+		wire.Struct(new(server.Router), "*"),
 	)
 
 	// ProviderSet 汇总所有依赖

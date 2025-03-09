@@ -1,4 +1,4 @@
-package httpServer
+package server
 
 import (
 	"context"
@@ -19,8 +19,8 @@ import (
 	"goWebExample/pkg/utils"
 )
 
-// HttpServer 封装HTTP服务器及其依赖
-type HttpServer struct {
+// HTTPServer 封装HTTP服务器及其依赖
+type HTTPServer struct {
 	AllConfig *configs.AllConfig
 	Logger    *zap.Logger
 	DB        *gorm.DB
@@ -29,16 +29,16 @@ type HttpServer struct {
 	Engine    *gin.Engine
 }
 
-// NewHttpServer 创建一个新的HttpServer实例
-func NewHttpServer(
+// NewHTTPServer 创建一个新的HttpServer实例
+func NewHTTPServer(
 	config *configs.AllConfig,
 	logger *zap.Logger,
 	db *gorm.DB,
 	engine *gin.Engine,
 	router *Router,
 	registry etcd.ServiceRegistry, // 添加服务注册器参数
-) *HttpServer {
-	server := &HttpServer{
+) *HTTPServer {
+	server := &HTTPServer{
 		AllConfig: config,
 		Logger:    logger,
 		DB:        db,
@@ -54,7 +54,7 @@ func NewHttpServer(
 }
 
 // RunServer 启动HTTP服务器
-func (s *HttpServer) RunServer() {
+func (s *HTTPServer) RunServer() {
 	// 初始化全局验证器
 	if err := utils.InitGlobalValidator(); err != nil {
 		s.Logger.Error("初始化全局验证器失败", zap.Error(err))
@@ -83,7 +83,7 @@ func (s *HttpServer) RunServer() {
 }
 
 // startServer 配置并启动HTTP服务器
-func (s *HttpServer) startServer() {
+func (s *HTTPServer) startServer() {
 	// 创建HTTP服务器
 	httpServer := &http.Server{
 		Addr:           fmt.Sprintf(":%d", s.AllConfig.Server.HttpPort),
@@ -99,7 +99,7 @@ func (s *HttpServer) startServer() {
 			s.Logger.Error("注册服务到Etcd失败，服务器将不会启动", zap.Error(err))
 			return // 直接返回，不启动HTTP服务
 		}
-		s.Logger.Info("服务已成功注册到Etcd")
+		//s.Logger.Info("服务已成功注册到Etcd")
 	} else {
 		s.Logger.Info("未配置Etcd服务注册，跳过服务注册步骤")
 	}

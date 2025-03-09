@@ -9,7 +9,7 @@ log:
   prefix: go-server-rest-api
   enableConsole: true
   enableFile: true
-  level: info
+  level: error
   path: ./logs
 
 database:

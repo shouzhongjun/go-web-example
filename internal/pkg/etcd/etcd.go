@@ -98,10 +98,7 @@ func (e *etcdRegistry) Register(ctx context.Context) error {
 		}
 	}()
 
-	e.logger.Info("服务已成功注册到Etcd",
-		zap.String("endpoint", e.config.Etcd.GetAddr()),
-		zap.String("serviceKey", e.serviceKey),
-		zap.String("serviceValue", serviceValue))
+	e.logger.Info("服务已成功注册到Etcd")
 
 	return nil
 }

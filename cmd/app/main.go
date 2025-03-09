@@ -6,8 +6,8 @@ import (
 
 func main() {
 
-	config := configs.ReadConfig(configs.ConfigPath)
-	wireApp := WireApp(config)
-	wireApp.RunServer()
+	appConfig := configs.ReadConfig(configs.ConfigPath)
+	app := InitializeApp(appConfig)
+	app.RunServer()
 
 }

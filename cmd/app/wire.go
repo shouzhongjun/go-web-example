@@ -7,13 +7,13 @@ import (
 	"goWebExample/internal/app"
 	"goWebExample/internal/configs"
 	"goWebExample/internal/pkg/etcd"
-	"goWebExample/internal/pkg/httpServer"
+	"goWebExample/internal/pkg/server"
 
 	"github.com/google/wire"
 )
 
-// WireApp 是 wire 的注入函数
-func WireApp(config *configs.AllConfig) *httpServer.HttpServer {
+// InitializeApp 是 wire 的注入函数
+func InitializeApp(config *configs.AllConfig) *server.HTTPServer {
 	wire.Build(
 		// 使用 app 包中定义的 provider 集合
 		app.ProviderSet,
@@ -28,8 +28,8 @@ func WireApp(config *configs.AllConfig) *httpServer.HttpServer {
 		// 添加 etcd 的 provider
 		etcd.NewServiceRegistry,
 
-		// 使用 NewHttpServer
-		httpServer.NewHttpServer,
+		// 使用 NewHTTPServer
+		server.NewHTTPServer,
 	)
-	return &httpServer.HttpServer{}
+	return &server.HTTPServer{}
 }

@@ -2,7 +2,7 @@ package db
 
 import (
 	"goWebExample/internal/configs"
-	"goWebExample/pkg/utils"
+	initlogger "goWebExample/pkg/logger"
 	"log"
 
 	"go.uber.org/zap"
@@ -13,7 +13,7 @@ import (
 )
 
 func NewGormConfig(config *configs.AllConfig, logger *zap.Logger) *gorm.DB {
-	gormZap := utils.NewGormZap(logger, gormlogger.Info)
+	gormZap := initlogger.NewGormZap(logger, gormlogger.Info)
 	g := &gorm.Config{
 		Logger: gormZap,
 		NamingStrategy: schema.NamingStrategy{

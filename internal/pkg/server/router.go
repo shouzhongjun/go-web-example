@@ -1,4 +1,4 @@
-package httpServer
+package server
 
 import (
 	"goWebExample/api/rest/handlers"

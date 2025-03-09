@@ -39,14 +39,14 @@ type Log struct {
 
 // Database 数据库配置
 type Database struct {
-	Sslmode         string `yaml:"sslmode"`
-	MaxOpenConns    int    `yaml:"maxOpenConns"`
+	SSLMode         string `yaml:"ssl_mode"`
+	MaxOpenConns    int    `yaml:"maxOpen_conns"`
 	ConnMaxLifetime string `yaml:"connMaxLifetime"`
 	Host            string `yaml:"host"`
 	User            string `yaml:"user"`
 	Password        string `yaml:"password"`
 	Port            int    `yaml:"port"`
-	Dbname          string `yaml:"dbname"`
+	DBName          string `yaml:"dbname"`
 	MaxIdleConns    int    `yaml:"maxIdleConns"`
 }
 
@@ -54,10 +54,10 @@ type Database struct {
 func (db *Database) GetDSN() string {
 	// mysql dsn
 	return fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8mb4&parseTime=True&loc=Local",
-		db.User, db.Password, db.Host, db.Port, db.Dbname)
+		db.User, db.Password, db.Host, db.Port, db.DBName)
 
 	//return fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%d sslmode=%s",
-	//	db.Host, db.User, db.Password, db.Dbname, db.Port, db.Sslmode)
+	//	db.Host, db.User, db.Password, db.DBName, db.Port, db.SSLMode)
 }
 
 // GetConnMaxLifetime 获取连接最大生命周期
@@ -104,7 +104,9 @@ func (e *Etcd) DialTimeout() time.Duration {
 // Server 服务器配置
 type Server struct {
 	ServerName string `yaml:"serverName"`
-	HttpPort   int    `yaml:"httpPort"`
+	Port       int    `yaml:"port"`
+	Host       string `yaml:"host"`
+	Version    string `yaml:"version"`
 }
 
 // IsDev 判断是否为开发环境
@@ -162,7 +164,7 @@ func getDefaultConfig() *AllConfig {
 	return &AllConfig{
 		Server: Server{
 			ServerName: "goWebExample",
-			HttpPort:   8080,
+			Port:       8080,
 		},
 		Log: Log{
 			Level: "debug",
@@ -173,8 +175,8 @@ func getDefaultConfig() *AllConfig {
 			Port:            5432,
 			User:            "postgres",
 			Password:        "postgres",
-			Dbname:          "gowebexample",
-			Sslmode:         "disable",
+			DBName:          "gowebexample",
+			SSLMode:         "disable",
 			MaxOpenConns:    10,
 			MaxIdleConns:    5,
 			ConnMaxLifetime: "1h",

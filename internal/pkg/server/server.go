@@ -86,7 +86,7 @@ func (s *HTTPServer) RunServer() {
 func (s *HTTPServer) startServer() {
 	// 创建HTTP服务器
 	httpServer := &http.Server{
-		Addr:           fmt.Sprintf(":%d", s.AllConfig.Server.HttpPort),
+		Addr:           fmt.Sprintf(":%d", s.AllConfig.Server.Port),
 		Handler:        s.Engine,
 		ReadTimeout:    5 * time.Second,
 		WriteTimeout:   10 * time.Second,
@@ -106,7 +106,7 @@ func (s *HTTPServer) startServer() {
 
 	// 在goroutine中启动服务器
 	go func() {
-		s.Logger.Info(fmt.Sprintf("服务器启动在 :%d", s.AllConfig.Server.HttpPort))
+		s.Logger.Info(fmt.Sprintf("服务器启动在 :%d", s.AllConfig.Server.Port))
 
 		if err := httpServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			s.Logger.Fatal("HTTP服务器启动失败", zap.Error(err))

@@ -3,7 +3,9 @@ model:
 
 server:
   serverName: go-server-rest-api
-  httpPort: 8080
+  port: 8080
+  host: 0.0.0.0
+  version: v1.0.0
 
 log:
   prefix: go-server-rest-api
@@ -18,7 +20,7 @@ database:
   user: root
   password: root
   dbname: dev
-  sslmode: disable
+  ssl_mode: disable
   maxIdleConns: 10
   maxOpenConns: 10
   connMaxLifetime: 5m

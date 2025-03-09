@@ -48,7 +48,7 @@ func (e *etcdRegistry) Register(ctx context.Context) error {
 
 	// 修正服务信息构建
 	serviceValue := fmt.Sprintf(`{"name":"%s","address":"%s","version":"%s"}`,
-		e.config.Server.ServerName)
+		e.config.Server.ServerName, e.config.Server.Host, e.config.Server.Version)
 
 	// 增加Put操作超时时间
 	putCtx, putCancel := context.WithTimeout(ctx, 15*time.Second)
@@ -208,7 +208,7 @@ func (e *etcdRegistry) Deregister(ctx context.Context) error {
 type failedRegistry struct {
 	err    error
 	logger *zap.Logger
-	reason string // 添加一个原因字段
+	reason string // 原因
 }
 
 func (f *failedRegistry) Register(ctx context.Context) error {

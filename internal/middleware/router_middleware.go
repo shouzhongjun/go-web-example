@@ -1,7 +1,6 @@
 package middleware
 
 import (
-	"context"
 	"net/http"
 	"time"
 
@@ -21,6 +20,9 @@ func LoadMiddleware(logger *zap.Logger, engine *gin.Engine) {
 	// 恢复中间件，用于捕获所有panic并恢复
 	engine.Use(gin.Recovery())
 
+	// 请求ID中间件
+	engine.Use(RequestIDMiddleware())
+
 	// 日志中间件
 	engine.Use(GinLogger(logger))
 
@@ -32,6 +34,10 @@ func LoadMiddleware(logger *zap.Logger, engine *gin.Engine) {
 
 	// 请求超时中间件
 	engine.Use(TimeoutMiddleware(10 * time.Second))
+
+	// 限流中间件 - 每秒允许10个请求，最多允许20个突发请求
+	limiter := NewIPRateLimiter(10, 20)
+	engine.Use(RateLimitMiddleware(limiter))
 
 	// 使用utils包中的全局验证器
 	setupValidator(logger)
@@ -87,52 +93,19 @@ func setupValidator(logger *zap.Logger) {
 	}
 }
 
-// TimeoutMiddleware 超时中间件
-func TimeoutMiddleware(timeout time.Duration) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		// 包装上下文
-		ctx, cancel := context.WithTimeout(c.Request.Context(), timeout)
-		defer cancel()
-
-		// 更新请求上下文
-		c.Request = c.Request.WithContext(ctx)
-
-		// 创建完成通道
-		done := make(chan struct{})
-
-		// 处理请求
-		go func() {
-			c.Next()
-			done <- struct{}{}
-		}()
-
-		// 等待请求完成或超时
-		select {
-		case <-done:
-			// 请求正常完成
-			return
-		case <-ctx.Done():
-			// 请求超时
-			c.AbortWithStatusJSON(http.StatusRequestTimeout, gin.H{
-				"code":    http.StatusRequestTimeout,
-				"message": "请求处理超时",
-			})
-			return
-		}
-	}
-}
-
 // GinLogger 接收一个zap.Logger并返回一个gin.HandlerFunc
 func GinLogger(logger *zap.Logger) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		start := time.Now()
 		path := c.Request.URL.Path
 		query := c.Request.URL.RawQuery
+		requestID := c.GetString("X-Request-ID")
 
 		c.Next()
 
 		cost := time.Since(start)
 		logger.Info("请求日志",
+			zap.String("requestID", requestID),
 			zap.Int("状态", c.Writer.Status()),
 			zap.String("方法", c.Request.Method),
 			zap.String("路径", path),

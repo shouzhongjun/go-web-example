@@ -105,9 +105,16 @@ func (e *etcdRegistry) Register(ctx context.Context) error {
 
 // NewServiceRegistry 创建服务注册器，失败时返回空实现
 func NewServiceRegistry(config *configs.AllConfig, logger *zap.Logger) ServiceRegistry {
+	// 检查 Etcd 配置是否启用
 	if config.Etcd == nil || config.Etcd.GetAddr() == "" {
 		logger.Info("Etcd配置为空或地址未设置，跳过服务注册")
-		return &failedRegistry{logger: logger}
+		return &failedRegistry{logger: logger, reason: "config_missing"}
+	}
+
+	// 检查是否主动禁用
+	if !config.Etcd.Enable {
+		logger.Info("Etcd服务注册功能已禁用")
+		return &failedRegistry{logger: logger, reason: "disabled"}
 	}
 
 	// 记录尝试连接的信息
@@ -137,7 +144,7 @@ func NewServiceRegistry(config *configs.AllConfig, logger *zap.Logger) ServiceRe
 		logger.Error("创建etcd客户端失败，将使用空实现",
 			zap.String("endpoint", config.Etcd.GetAddr()),
 			zap.Error(err))
-		return &failedRegistry{err: err, logger: logger}
+		return &failedRegistry{err: err, logger: logger, reason: "connection_failed"}
 	}
 
 	// 增加状态检查超时时间
@@ -161,7 +168,7 @@ func NewServiceRegistry(config *configs.AllConfig, logger *zap.Logger) ServiceRe
 		logger.Warn("请确保etcd服务器已启动并且可以访问。您可以使用以下命令检查etcd状态：",
 			zap.String("check_command", "curl -L http://"+config.Etcd.GetAddr()+"/health"))
 
-		return &failedRegistry{err: err, logger: logger}
+		return &failedRegistry{err: err, logger: logger, reason: "connection_failed"}
 	}
 
 	logger.Info("成功连接到etcd服务器",
@@ -201,9 +208,17 @@ func (e *etcdRegistry) Deregister(ctx context.Context) error {
 type failedRegistry struct {
 	err    error
 	logger *zap.Logger
+	reason string // 添加一个原因字段
 }
 
 func (f *failedRegistry) Register(ctx context.Context) error {
+	// 如果是主动不启用，则只记录信息级别日志
+	if f.reason == "disabled" {
+		f.logger.Info("ETCD服务注册已禁用，跳过注册")
+		return nil
+	}
+
+	// 否则记录错误日志
 	f.logger.Error("无法注册服务，ETCD连接失败", zap.Error(f.err))
 	return f.err
 }

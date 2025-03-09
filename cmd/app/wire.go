@@ -20,13 +20,12 @@ func InitializeApp(config *configs.AllConfig) *server.HTTPServer {
 		app.LoggerSet,
 		app.DatabaseSet,
 
+		// 添加 etcd 的 provider
+		etcd.NewServiceRegistry,
 		// 使用 app.NewGin 而不是 gin.Default
 		app.NewGin,
 
 		app.RouterSet,
-
-		// 添加 etcd 的 provider
-		etcd.NewServiceRegistry,
 
 		// 使用 NewHTTPServer
 		server.NewHTTPServer,

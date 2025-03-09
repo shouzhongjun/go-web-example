@@ -9,7 +9,6 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
-	glog "gorm.io/gorm/logger"
 	"gorm.io/gorm/schema"
 )
 
@@ -85,22 +84,4 @@ func maskDSN(dsn string) string {
 		}
 	}
 	return "******" // 如果无法解析，则完全掩码
-}
-
-// getGormLogLevel 根据项目日志级别返回对应的 Gorm 日志级别
-func getGormLogLevel(level string) glog.LogLevel {
-	switch strings.ToLower(level) {
-	case "debug":
-		return glog.Info // Gorm 没有 Debug 级别，使用 Info 作为最详细级别
-	case "info":
-		return glog.Info
-	case "warn", "warning":
-		return glog.Warn
-	case "error":
-		return glog.Error
-	case "fatal", "panic":
-		return glog.Silent // 严重错误时，数据库操作应该是静默的
-	default:
-		return glog.Info // 默认使用 Info 级别
-	}
 }

@@ -36,7 +36,7 @@ redis:
   maxActiveConns: 10
 
 etcd:
-  enable: false
+  enable: true
   host: localhost
   port: 2379
   password: ""

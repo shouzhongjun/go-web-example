@@ -103,7 +103,7 @@ func (e *etcdRegistry) Register(ctx context.Context) error {
 	return nil
 }
 
-// NewServiceRegistry 创建服务注册器，失败时返回空实现
+// NewServiceRegistry 创建服务注册器
 func NewServiceRegistry(config *configs.AllConfig, logger *zap.Logger) ServiceRegistry {
 	// 检查 Etcd 配置是否启用
 	if config.Etcd == nil || config.Etcd.EtcdAddr() == "" {
@@ -141,34 +141,27 @@ func NewServiceRegistry(config *configs.AllConfig, logger *zap.Logger) ServiceRe
 	})
 
 	if err != nil {
-		logger.Error("创建etcd客户端失败，将使用空实现",
+		logger.Error("创建etcd客户端失败",
 			zap.String("endpoint", config.Etcd.EtcdAddr()),
 			zap.Error(err))
-		return &failedRegistry{err: err, logger: logger, reason: "connection_failed"}
+		logger.Fatal("Etcd连接失败且为必需组件，终止服务启动")
+		return nil // 这行代码永远不会执行，因为 Fatal 会终止程序
 	}
 
-	// 增加状态检查超时时间
+	// 检查连接状态
 	ctx, cancel := context.WithTimeout(context.Background(), dialTimeout)
 	defer cancel()
 
-	// 尝试获取状态前记录日志
-	logger.Debug("正在检查etcd服务器状态", zap.String("endpoint", config.Etcd.EtcdAddr()))
-
 	_, err = client.Status(ctx, config.Etcd.EtcdAddr())
 	if err != nil {
-		err := client.Close()
-		if err != nil {
-			return nil
+		if closeErr := client.Close(); closeErr != nil {
+			logger.Error("关闭etcd客户端失败", zap.Error(closeErr))
 		}
-		logger.Error("连接etcd服务器失败，将使用空实现",
+		logger.Error("连接etcd服务器失败",
 			zap.String("endpoint", config.Etcd.EtcdAddr()),
 			zap.Error(err))
-
-		// 提供更详细的错误信息和建议
-		logger.Warn("请确保etcd服务器已启动并且可以访问。您可以使用以下命令检查etcd状态：",
-			zap.String("check_command", "curl -L http://"+config.Etcd.EtcdAddr()+"/health"))
-
-		return &failedRegistry{err: err, logger: logger, reason: "connection_failed"}
+		logger.Fatal("Etcd连接失败且为必需组件，终止服务启动")
+		return nil // 这行代码永远不会执行
 	}
 
 	logger.Info("成功连接到etcd服务器",

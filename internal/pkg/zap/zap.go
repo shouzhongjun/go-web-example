@@ -81,6 +81,7 @@ func getLogWriter(filePath string) zapcore.WriteSyncer {
 	if err != nil {
 		// 如果无法打开日志文件，回退到标准错误输出
 		fmt.Fprintf(os.Stderr, "无法打开日志文件 %s: %v\n", filePath, err)
+
 		return zapcore.AddSync(os.Stderr)
 	}
 	return zapcore.AddSync(file)

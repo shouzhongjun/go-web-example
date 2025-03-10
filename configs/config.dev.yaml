@@ -11,7 +11,7 @@ log:
   prefix: go-server-rest-api
   enableConsole: true
   enableFile: true
-  level: error
+  level: info
   path: ./logs
 
 database:
@@ -42,7 +42,15 @@ etcd:
   host: localhost
   port: 2379
   password: ""
-  dialTimeOut: 50
+  dialTimeOut: 5
   username: ""
-  leaseTTL: 5
+  leaseTTL: 60
+
+mongodb:
+  uri: "mongodb://localhost:27017"
+  maxPoolSize: 100
+  minPoolSize: 10
+  maxConnIdleTime: 60
+  username: ""
+  password: ""
 

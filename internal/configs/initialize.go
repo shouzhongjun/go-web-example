@@ -26,6 +26,7 @@ type AllConfig struct {
 	Redis    Redis       `yaml:"redis"`
 	Etcd     *Etcd       `yaml:"etcd"`
 	Kafka    KafkaConfig `yaml:"kafka"`
+	MongoDB  *MongoDB    `yaml:"mongodb"`
 }
 
 // Log 日志配置
@@ -96,8 +97,15 @@ func (e *Etcd) EtcdAddr() string {
 }
 
 func (e *Etcd) DialTimeout() time.Duration {
-	return time.Duration(e.DialTimeOut)
+	return time.Duration(e.DialTimeOut) * time.Second
+}
 
+// GetLeaseTTL 获取租约TTL（秒）
+func (e *Etcd) GetLeaseTTL() int64 {
+	if e.LeaseTTL <= 0 {
+		return 30 // 默认30秒
+	}
+	return e.LeaseTTL
 }
 
 // Server 服务器配置
@@ -156,4 +164,14 @@ func (k *KafkaConfig) KafkaBrokers() []string {
 // KafkaDSN 获取Kafka连接字符串
 func (k *KafkaConfig) KafkaDSN() string {
 	return strings.Join(k.KafkaBrokers(), ",")
+}
+
+// MongoDB MongoDB配置
+type MongoDB struct {
+	URI             string `yaml:"uri"`
+	MaxPoolSize     int    `yaml:"maxPoolSize"`
+	MinPoolSize     int    `yaml:"minPoolSize"`
+	MaxConnIdleTime int    `yaml:"maxConnIdleTime"`
+	Username        string `yaml:"username"`
+	Password        string `yaml:"password"`
 }

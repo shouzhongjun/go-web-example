@@ -7,9 +7,9 @@ import (
 	"go.uber.org/zap"
 
 	"goWebExample/internal/configs"
+	"goWebExample/internal/infrastructure/di/container"
 	"goWebExample/internal/middleware"
 	"goWebExample/internal/pkg/server"
-	"goWebExample/pkg/infrastructure/container"
 )
 
 // App 应用程序结构体

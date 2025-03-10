@@ -1,13 +1,14 @@
 package user
 
 import (
-	"goWebExample/pkg/infrastructure/db"
+	"goWebExample/internal/infrastructure/db/mysql"
 
 	"gorm.io/gorm"
 )
 
 // RepositoryUser 用户数据操作接口
 type RepositoryUser interface {
+	GetDB() *gorm.DB
 	Create(user *Users) error
 	GetByID(id uint64) (*Users, error)
 	GetAll() ([]Users, error)
@@ -15,23 +16,19 @@ type RepositoryUser interface {
 }
 
 type userRepositoryImpl struct {
-	dbConnector *db.DBConnector
+	dbConnector *mysql.DBConnector
 }
 
-func NewUserRepository(dbConnector *db.DBConnector) RepositoryUser {
+func NewUserRepository(dbConnector *mysql.DBConnector) RepositoryUser {
 	return &userRepositoryImpl{dbConnector: dbConnector}
 }
 
-// getDB 获取数据库连接
-func (r *userRepositoryImpl) getDB() *gorm.DB {
-	if r.dbConnector == nil || !r.dbConnector.IsConnected() {
-		return nil
-	}
-	return r.dbConnector.GetTypedClient()
+func (r *userRepositoryImpl) GetDB() *gorm.DB {
+	return r.dbConnector.GetDB()
 }
 
 func (r *userRepositoryImpl) Create(user *Users) error {
-	db := r.getDB()
+	db := r.GetDB()
 	if db == nil {
 		return ErrDBNotConnected
 	}
@@ -39,7 +36,7 @@ func (r *userRepositoryImpl) Create(user *Users) error {
 }
 
 func (r *userRepositoryImpl) GetByID(id uint64) (*Users, error) {
-	db := r.getDB()
+	db := r.GetDB()
 	if db == nil {
 		return nil, ErrDBNotConnected
 	}
@@ -52,7 +49,7 @@ func (r *userRepositoryImpl) GetByID(id uint64) (*Users, error) {
 }
 
 func (r *userRepositoryImpl) GetAll() ([]Users, error) {
-	db := r.getDB()
+	db := r.GetDB()
 	if db == nil {
 		return nil, ErrDBNotConnected
 	}
@@ -65,7 +62,7 @@ func (r *userRepositoryImpl) GetAll() ([]Users, error) {
 }
 
 func (r *userRepositoryImpl) Delete(id uint) error {
-	db := r.getDB()
+	db := r.GetDB()
 	if db == nil {
 		return ErrDBNotConnected
 	}

@@ -2,126 +2,145 @@ package zap
 
 import (
 	"fmt"
-	"goWebExample/internal/configs"
 	"os"
+	"path/filepath"
 	"strings"
-	"sync"
 	"time"
 
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+
+	"goWebExample/internal/configs"
 )
 
-// Logger 全局日志对象
-var (
-	logger *zap.Logger
-	once   sync.Once
-)
-
-// NewZap 提供 Wire 依赖注入
-func NewZap(config *configs.AllConfig) *zap.Logger {
-	var err error
-	once.Do(func() {
-		// 从配置文件获取环境模式
-		env := "development"
-		if config.IsDev() {
-			env = "development" // 默认开发模式
-		}
-
-		logger, err = newZapLogger(env, config.Log.Path)
-		if err != nil {
-			fmt.Printf("初始化日志失败: %v\n", err)
-			// 创建一个基本的 logger 作为后备
-			logger, _ = zap.NewProduction()
-		}
-	})
-	return logger
+// parseLevel 将字符串转换为 zapcore.Level
+func parseLevel(level string) zapcore.Level {
+	switch strings.ToLower(level) {
+	case "debug":
+		return zapcore.DebugLevel
+	case "info":
+		return zapcore.InfoLevel
+	case "warn":
+		return zapcore.WarnLevel
+	case "error":
+		return zapcore.ErrorLevel
+	case "dpanic":
+		return zapcore.DPanicLevel
+	case "panic":
+		return zapcore.PanicLevel
+	case "fatal":
+		return zapcore.FatalLevel
+	default:
+		return zapcore.InfoLevel
+	}
 }
 
-// newZapLogger 创建 zap 日志实例
-func newZapLogger(env string, logPath string) (*zap.Logger, error) {
-	// 验证环境参数
-	if env != "development" && env != "production" {
-		return nil, fmt.Errorf("invalid environment: %s", env)
+// customLevelEncoder 自定义日志级别编码器，添加颜色
+func customLevelEncoder(l zapcore.Level, enc zapcore.PrimitiveArrayEncoder) {
+	var colorCode string
+	switch l {
+	case zapcore.DebugLevel:
+		colorCode = "\x1b[36m" // Cyan
+	case zapcore.InfoLevel:
+		colorCode = "\x1b[34m" // Blue
+	case zapcore.WarnLevel:
+		colorCode = "\x1b[33m" // Yellow
+	case zapcore.ErrorLevel:
+		colorCode = "\x1b[31m" // Red
+	case zapcore.DPanicLevel, zapcore.PanicLevel, zapcore.FatalLevel:
+		colorCode = "\x1b[35m" // Magenta
+	default:
+		colorCode = "\x1b[0m" // Reset
 	}
+	enc.AppendString(fmt.Sprintf("\t%s%s%s\t", colorCode, l.CapitalString(), "\x1b[0m"))
+}
 
-	// 如果日志路径为空，使用默认路径
-	if logPath == "" {
-		logPath = "logs"
-	}
+// customCallerEncoder 自定义调用者编码器
+func customCallerEncoder(caller zapcore.EntryCaller, enc zapcore.PrimitiveArrayEncoder) {
+	enc.AppendString(fmt.Sprintf("%s\t", caller.TrimmedPath()))
+}
 
-	encoder := getEncoder()
-	level := zapcore.DebugLevel
-	if env == "production" {
-		level = zapcore.InfoLevel
-	}
-
-	// 确保日志目录存在
-	if err := os.MkdirAll(logPath, 0755); err != nil {
-		return nil, fmt.Errorf("failed to create logs directory: %v", err)
-	}
-
-	// 创建不同级别的日志文件路径
-	infoLogPath := fmt.Sprintf("%s/info.log", logPath)
-	errorLogPath := fmt.Sprintf("%s/error.log", logPath)
-
-	// 创建多个 Core
-	core := zapcore.NewTee(
-		zapcore.NewCore(encoder, zapcore.AddSync(os.Stdout), level),              // 控制台输出
-		zapcore.NewCore(encoder, getLogWriter(infoLogPath), zapcore.InfoLevel),   // Info 级别日志文件
-		zapcore.NewCore(encoder, getLogWriter(errorLogPath), zapcore.ErrorLevel), // Error 级别日志文件
-	)
-
-	return zap.New(core, zap.AddCaller(), zap.AddCallerSkip(1)), nil
+// customTimeEncoder 自定义时间编码器
+func customTimeEncoder(t time.Time, enc zapcore.PrimitiveArrayEncoder) {
+	enc.AppendString(t.Format(time.DateTime))
 }
 
 // getLogWriter 获取日志文件写入器
-func getLogWriter(filePath string) zapcore.WriteSyncer {
-	file, err := os.OpenFile(filePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
-	if err != nil {
-		// 如果无法打开日志文件，回退到标准错误输出
-		fmt.Fprintf(os.Stderr, "无法打开日志文件 %s: %v\n", filePath, err)
-
-		return zapcore.AddSync(os.Stderr)
+func getLogWriter(path, filename string) zapcore.WriteSyncer {
+	if err := os.MkdirAll(path, os.ModePerm); err != nil {
+		panic(err)
 	}
+
+	logFile := filepath.Join(path, filename)
+	file, err := os.OpenFile(logFile, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
+	if err != nil {
+		panic(err)
+	}
+
 	return zapcore.AddSync(file)
 }
 
-// getEncoder 获取日志编码器
-func getEncoder() zapcore.Encoder {
+// NewZap 创建一个新的 zap 日志记录器
+func NewZap(config *configs.AllConfig) *zap.Logger {
+	// 创建编码器配置
 	encoderConfig := zapcore.EncoderConfig{
-		TimeKey:        "time",
-		LevelKey:       "level",
-		MessageKey:     "message",
-		CallerKey:      "caller",
-		EncodeTime:     zapcore.TimeEncoderOfLayout(time.RFC3339), // 设置时间格式
-		EncodeLevel:    zapcore.CapitalColorLevelEncoder,          // 颜色编码
-		EncodeCaller:   customCallerEncoder,                       // 自定义路径编码器
+		TimeKey:        "T",
+		LevelKey:       "L",
+		NameKey:        "N",
+		CallerKey:      "C",
+		MessageKey:     "M",
+		StacktraceKey:  "S",
+		LineEnding:     zapcore.DefaultLineEnding,
+		EncodeLevel:    customLevelEncoder,
+		EncodeTime:     customTimeEncoder,
 		EncodeDuration: zapcore.SecondsDurationEncoder,
-	}
-	return zapcore.NewConsoleEncoder(encoderConfig)
-}
-
-// customCallerEncoder 自定义调用者编码器，只显示项目相对路径
-func customCallerEncoder(caller zapcore.EntryCaller, enc zapcore.PrimitiveArrayEncoder) {
-	// 如果是项目内的路径，只显示相对路径部分
-	path := caller.TrimmedPath()
-	if idx := findProjectPath(path); idx >= 0 {
-		path = path[idx:]
-	}
-	enc.AppendString(path)
-}
-
-// findProjectPath 查找项目路径的起始位置
-func findProjectPath(path string) int {
-	// 查找项目名称在路径中的位置
-	projectName := "goWebExample"
-	idx := -1
-
-	// 寻找项目名称在路径中的位置
-	if i := strings.Index(path, projectName); i >= 0 {
-		idx = i
+		EncodeCaller:   customCallerEncoder,
 	}
 
-	return idx
+	// 解析日志级别
+	level := parseLevel(config.Log.Level)
+
+	var cores []zapcore.Core
+
+	// 如果启用了控制台输出
+	if config.Log.EnableConsole {
+		consoleCore := zapcore.NewCore(
+			zapcore.NewConsoleEncoder(encoderConfig),
+			zapcore.AddSync(os.Stdout),
+			level,
+		)
+		cores = append(cores, consoleCore)
+	}
+
+	// 如果启用了文件输出
+	if config.Log.EnableFile {
+		today := time.Now().Format("2006-01-02")
+
+		// 普通日志（info及以下级别）
+		normalLogWriter := getLogWriter(config.Log.Path, today+".info.log")
+		normalCore := zapcore.NewCore(
+			zapcore.NewConsoleEncoder(encoderConfig),
+			normalLogWriter,
+			zap.LevelEnablerFunc(func(lvl zapcore.Level) bool {
+				return lvl <= zapcore.InfoLevel && lvl >= level
+			}),
+		)
+		cores = append(cores, normalCore)
+
+		// 错误日志（warn及以上级别）
+		errorLogWriter := getLogWriter(config.Log.Path, today+".error.log")
+		errorCore := zapcore.NewCore(
+			zapcore.NewConsoleEncoder(encoderConfig),
+			errorLogWriter,
+			zap.LevelEnablerFunc(func(lvl zapcore.Level) bool {
+				return lvl > zapcore.InfoLevel && lvl >= level
+			}),
+		)
+		cores = append(cores, errorCore)
+	}
+
+	// 创建日志记录器
+	core := zapcore.NewTee(cores...)
+	logger := zap.New(core, zap.AddCaller())
+	return logger
 }

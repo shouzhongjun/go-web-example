@@ -6,17 +6,17 @@ import (
 
 	"go.uber.org/zap"
 
-	"goWebExample/pkg/infrastructure/db"
-	"goWebExample/pkg/infrastructure/etcd"
-	"goWebExample/pkg/infrastructure/service"
+	"goWebExample/internal/infrastructure/db/mysql"
+	"goWebExample/internal/infrastructure/di/factory"
+	"goWebExample/internal/infrastructure/discovery"
 )
 
 // ServiceContainer 包含所有服务依赖
 type ServiceContainer struct {
-	Factory         *service.Factory
-	DBConnector     *db.DBConnector
-	EtcdConnector   *etcd.EtcdConnector
-	ServiceRegistry etcd.ServiceRegistry
+	Factory         *factory.Factory
+	DBConnector     *mysql.DBConnector
+	EtcdConnector   *discovery.EtcdConnector
+	ServiceRegistry discovery.ServiceRegistry
 	logger          *zap.Logger
 }
 
@@ -81,27 +81,27 @@ func (c *ServiceContainer) Shutdown(ctx context.Context) {
 
 	// 最后关闭服务工厂（包括所有连接器）
 	if c.Factory != nil {
-		c.Factory.ShutdownAllServices(ctx)
+		c.Factory.ShutdownAll(ctx)
 		c.logger.Info("服务工厂已关闭")
 	}
 }
 
 // GetFactory 获取服务工厂
-func (c *ServiceContainer) GetFactory() *service.Factory {
+func (c *ServiceContainer) GetFactory() *factory.Factory {
 	return c.Factory
 }
 
 // GetDBConnector 获取数据库连接器
-func (c *ServiceContainer) GetDBConnector() *db.DBConnector {
+func (c *ServiceContainer) GetDBConnector() *mysql.DBConnector {
 	return c.DBConnector
 }
 
 // GetEtcdConnector 获取ETCD连接器
-func (c *ServiceContainer) GetEtcdConnector() *etcd.EtcdConnector {
+func (c *ServiceContainer) GetEtcdConnector() *discovery.EtcdConnector {
 	return c.EtcdConnector
 }
 
 // GetServiceRegistry 获取服务注册器
-func (c *ServiceContainer) GetServiceRegistry() etcd.ServiceRegistry {
+func (c *ServiceContainer) GetServiceRegistry() discovery.ServiceRegistry {
 	return c.ServiceRegistry
 }

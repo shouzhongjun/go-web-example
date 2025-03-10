@@ -1,13 +1,13 @@
 package datacenter
 
 import (
-	"goWebExample/internal/service/datacenter_service"
+	"goWebExample/internal/service/datacenter"
 
 	"github.com/gin-gonic/gin"
 )
 
 type DataCenterHandler struct {
-	dataCenterService *datacenter_service.MockDataCenter
+	dataCenterService *datacenter.MockDataCenter
 }
 
 type Data struct {
@@ -15,7 +15,7 @@ type Data struct {
 	PageSize int `json:"pageSize"`
 }
 
-func NewDataCenterHandler(dataCenterService *datacenter_service.MockDataCenter) *DataCenterHandler {
+func NewDataCenterHandler(dataCenterService *datacenter.MockDataCenter) *DataCenterHandler {
 	return &DataCenterHandler{dataCenterService: dataCenterService}
 }
 

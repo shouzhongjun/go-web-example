@@ -1,4 +1,4 @@
-package datacenter_service
+package datacenter
 
 import (
 	"fmt"

@@ -6,16 +6,16 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"goWebExample/api/rest/response"
-	"goWebExample/internal/service/user_service"
+	"goWebExample/internal/service/user"
 )
 
 // UserHandler 处理用户相关的HTTP请求
 type UserHandler struct {
-	userService *user_service.UserService
+	userService *user.UserService
 }
 
 // NewUserHandler 创建一个新的用户处理器
-func NewUserHandler(userService *user_service.UserService) *UserHandler {
+func NewUserHandler(userService *user.UserService) *UserHandler {
 	return &UserHandler{
 		userService: userService,
 	}

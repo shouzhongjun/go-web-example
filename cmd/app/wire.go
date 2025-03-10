@@ -12,13 +12,13 @@ import (
 	"goWebExample/api/rest/handlers/user"
 	"goWebExample/internal/app"
 	"goWebExample/internal/configs"
+	"goWebExample/internal/infrastructure/cache"
+	"goWebExample/internal/infrastructure/db/mysql"
+	"goWebExample/internal/infrastructure/di/container"
+	"goWebExample/internal/infrastructure/di/factory"
+	"goWebExample/internal/infrastructure/discovery"
 	"goWebExample/internal/pkg/server"
 	internalwire "goWebExample/internal/wire"
-	"goWebExample/pkg/infrastructure/container"
-	"goWebExample/pkg/infrastructure/db"
-	"goWebExample/pkg/infrastructure/etcd"
-	"goWebExample/pkg/infrastructure/redis"
-	"goWebExample/pkg/infrastructure/service"
 	zaplogger "goWebExample/pkg/zap"
 )
 
@@ -41,36 +41,36 @@ var InfraSet = wire.NewSet(
 
 // ServiceContainer 包含所有服务依赖
 type ServiceContainer struct {
-	Factory         *service.Factory
-	DBConnector     *db.DBConnector
-	EtcdConnector   *etcd.EtcdConnector
-	ServiceRegistry etcd.ServiceRegistry
+	Factory         *factory.Factory
+	DBConnector     *mysql.DBConnector
+	EtcdConnector   *discovery.EtcdConnector
+	ServiceRegistry discovery.ServiceRegistry
 }
 
 // ProvideServiceFactory 创建服务工厂，统一管理所有连接器
 func ProvideServiceFactory(config *configs.AllConfig, logger *zap.Logger) (*container.ServiceContainer, error) {
 	// 创建服务工厂
-	factory := service.NewFactory()
+	factory := factory.NewFactory(config, logger)
 
 	container := container.NewServiceContainer(logger)
 	container.Factory = factory
 
 	// 创建数据库连接器
-	dbConnector := db.NewDBConnector(&config.Database, logger)
+	dbConnector := mysql.NewDBConnector(&config.Database, logger)
 	factory.RegisterConnector("db", dbConnector)
 	container.DBConnector = dbConnector
 
 	// 创建ETCD连接器
 	if config.Etcd != nil && config.Etcd.Enable {
-		etcdConnector := etcd.NewEtcdConnector(config.Etcd, logger)
+		etcdConnector := discovery.NewEtcdConnector(config.Etcd, logger)
 		factory.RegisterConnector("etcd", etcdConnector)
 		container.EtcdConnector = etcdConnector
-		container.ServiceRegistry = etcd.NewServiceRegistry(config, logger, etcdConnector)
+		container.ServiceRegistry = discovery.NewServiceRegistry(config, logger, etcdConnector)
 	}
 
 	// 创建Redis连接器
 	if config.Redis.Enable {
-		redisConnector := redis.NewRedisConnector(&config.Redis, logger)
+		redisConnector := cache.NewRedisConnector(&config.Redis, logger)
 		factory.RegisterConnector("redis", redisConnector)
 	}
 

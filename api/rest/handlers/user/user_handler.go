@@ -1,4 +1,4 @@
-package handlers
+package user
 
 import (
 	"net/http"
@@ -67,9 +67,11 @@ func (h *UserHandler) ListUsers(c *gin.Context) {
 }
 
 // RegisterRoutes 注册用户相关路由
+// 实现 handlers.Handler 接口
 func (h *UserHandler) RegisterRoutes(apiGroup *gin.RouterGroup) {
 	userGroup := apiGroup.Group("/users")
 	{
+		// 基本用户操作
 		userGroup.GET("/:userId", h.GetUserDetail)
 		userGroup.POST("", h.CreateUser)
 		userGroup.PUT("/:userId", h.UpdateUser)

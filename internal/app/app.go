@@ -1,50 +1,74 @@
 package app
 
 import (
+	"context"
+
 	"github.com/gin-gonic/gin"
-	"github.com/google/wire"
 	"go.uber.org/zap"
+
+	"goWebExample/internal/configs"
 	"goWebExample/internal/middleware"
 	"goWebExample/internal/pkg/server"
-	internalzap "goWebExample/internal/pkg/zap"
-	initwire "goWebExample/internal/wire"
-	"goWebExample/pkg/infrastructure/db"
+	"goWebExample/pkg/infrastructure/container"
 )
 
-// NewGin 创建并配置一个新的 Gin 引擎实例
-func NewGin(logger *zap.Logger) *gin.Engine {
-	// 根据配置文件日志级别，设置gin的模式
-	if logger.Core().Enabled(zap.DebugLevel) {
-		gin.SetMode(gin.DebugMode)
-	} else {
-		gin.SetMode(gin.ReleaseMode)
-	}
+// App 应用程序结构体
+type App struct {
+	httpServer *server.HTTPServer
+}
 
+// NewGin 创建 Gin 引擎
+func NewGin(logger *zap.Logger) *gin.Engine {
+	// 设置为发布模式
+	gin.SetMode(gin.ReleaseMode)
+
+	// 创建引擎
 	engine := gin.New()
-	// 加载中间件
+
+	// 加载所有中间件
 	middleware.LoadMiddleware(logger, engine)
+
 	return engine
 }
 
-// 核心依赖注入集合
-
-var (
-	// DatabaseSet 数据库相关依赖
-	DatabaseSet = wire.NewSet(db.NewDB)
-
-	// LoggerSet 日志相关依赖
-	LoggerSet = wire.NewSet(
-		internalzap.NewZap,
+// NewApp 创建应用程序实例
+func NewApp(
+	config *configs.AllConfig,
+	logger *zap.Logger,
+	engine *gin.Engine,
+	container *container.ServiceContainer,
+	handlers *server.Handlers,
+) *App {
+	// 创建路由
+	router := server.NewRouter(
+		engine,
+		logger,
+		handlers.User,
+		handlers.DataCenter,
 	)
 
-	// RouterSet 路由相关依赖
-	RouterSet = wire.NewSet(
-		wire.Struct(new(server.Router), "*"),
+	// 创建HTTP服务器
+	httpServer := server.NewHTTPServer(
+		config,
+		logger,
+		engine,
+		router,
+		container,
 	)
 
-	// ProviderSet 汇总所有业务模块依赖
-	ProviderSet = wire.NewSet(
-		initwire.AllModules,
-		// 其他业务模块...
-	)
-)
+	return &App{
+		httpServer: httpServer,
+	}
+}
+
+// GetHTTPServer 获取HTTP服务器实例
+func (a *App) GetHTTPServer() *server.HTTPServer {
+	return a.httpServer
+}
+
+// Run 运行应用程序
+func (a *App) Run(ctx context.Context) error {
+	// 运行HTTP服务器
+	a.httpServer.RunServer()
+	return nil
+}

@@ -71,6 +71,7 @@ type Redis struct {
 	Password       string `yaml:"password"`
 	Db             int    `yaml:"db"`
 	MaxIdleConns   int    `yaml:"maxIdleConns"`
+	Enable         bool   `yaml:"enable"`
 }
 
 // RedisAddr 获取Redis地址

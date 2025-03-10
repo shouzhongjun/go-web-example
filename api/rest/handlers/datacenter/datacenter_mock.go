@@ -1,4 +1,4 @@
-package handlers
+package datacenter
 
 import (
 	"github.com/gin-gonic/gin"

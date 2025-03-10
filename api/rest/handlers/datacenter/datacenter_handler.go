@@ -1,4 +1,4 @@
-package handlers
+package datacenter
 
 import (
 	"goWebExample/internal/service/datacenter_service"

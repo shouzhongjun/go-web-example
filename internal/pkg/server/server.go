@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"goWebExample/pkg/infrastructure/etcd"
 	"net/http"
 	"os"
 	"os/signal"
@@ -13,9 +12,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
-	"gorm.io/gorm"
 
 	"goWebExample/internal/configs"
+	"goWebExample/pkg/infrastructure/container"
 	"goWebExample/pkg/utils"
 )
 
@@ -23,28 +22,25 @@ import (
 type HTTPServer struct {
 	AllConfig *configs.AllConfig
 	Logger    *zap.Logger
-	DB        *gorm.DB
-	Router    *Router
-	registry  etcd.ServiceRegistry
 	Engine    *gin.Engine
+	Router    *Router
+	container *container.ServiceContainer
 }
 
 // NewHTTPServer 创建一个新的HttpServer实例
 func NewHTTPServer(
 	config *configs.AllConfig,
 	logger *zap.Logger,
-	db *gorm.DB,
 	engine *gin.Engine,
 	router *Router,
-	registry etcd.ServiceRegistry,
+	container *container.ServiceContainer,
 ) *HTTPServer {
 	server := &HTTPServer{
 		AllConfig: config,
 		Logger:    logger,
-		DB:        db,
-		Router:    router,
-		registry:  registry,
 		Engine:    engine,
+		Router:    router,
+		container: container,
 	}
 
 	// 注册路由
@@ -61,33 +57,13 @@ func (s *HTTPServer) RunServer() {
 		return
 	}
 
-	// 验证数据库连接
-	if s.DB != nil {
-		sqlDB, err := s.DB.DB()
-		if err != nil {
-			s.Logger.Error("获取数据库连接失败", zap.Error(err))
-			return
-		}
+	// 初始化所有服务
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
 
-		if err := sqlDB.Ping(); err != nil {
-			s.Logger.Error("数据库连接测试失败", zap.Error(err))
-			return
-		}
-
-		s.Logger.Info("数据库连接成功")
-	} else {
-		s.Logger.Warn("未配置数据库连接")
-	}
-
-	// 验证 etcd 服务注册
-	if s.registry != nil {
-		if err := s.registry.Register(context.Background()); err != nil {
-			s.Logger.Error("注册服务到Etcd失败", zap.Error(err))
-			return
-		}
-		s.Logger.Info("服务已成功注册到Etcd")
-	} else {
-		s.Logger.Warn("未配置Etcd服务注册")
+	if err := s.container.Initialize(ctx); err != nil {
+		s.Logger.Error("初始化服务失败", zap.Error(err))
+		return
 	}
 
 	s.startServer()
@@ -128,28 +104,10 @@ func (s *HTTPServer) startServer() {
 		s.Logger.Error("服务器强制关闭", zap.Error(err))
 	}
 
-	// 从Etcd注销服务
-	if s.registry != nil {
-		if err := s.registry.Deregister(context.Background()); err != nil {
-			s.Logger.Error("从Etcd注销服务失败", zap.Error(err))
-		} else {
-			s.Logger.Info("服务已从Etcd成功注销")
-		}
-	}
-
-	// 关闭数据库连接
-	if s.DB != nil {
-		sqlDB, err := s.DB.DB()
-		if err != nil {
-			s.Logger.Error("获取数据库连接失败", zap.Error(err))
-		} else {
-			if err := sqlDB.Close(); err != nil {
-				s.Logger.Error("关闭数据库连接失败", zap.Error(err))
-			} else {
-				s.Logger.Info("数据库连接已关闭")
-			}
-		}
-	}
+	// 关闭所有服务
+	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer shutdownCancel()
+	s.container.Shutdown(shutdownCtx)
 
 	s.Logger.Info(s.AllConfig.Server.ServerName + " 已退出")
 }

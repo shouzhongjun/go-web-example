@@ -4,31 +4,111 @@
 package main
 
 import (
+	"github.com/gin-gonic/gin"
+	"github.com/google/wire"
+	"go.uber.org/zap"
+
+	"goWebExample/api/rest/handlers"
+	"goWebExample/api/rest/handlers/user"
 	"goWebExample/internal/app"
 	"goWebExample/internal/configs"
 	"goWebExample/internal/pkg/server"
+	internalwire "goWebExample/internal/wire"
+	"goWebExample/pkg/infrastructure/container"
+	"goWebExample/pkg/infrastructure/db"
 	"goWebExample/pkg/infrastructure/etcd"
-
-	"github.com/google/wire"
+	"goWebExample/pkg/infrastructure/redis"
+	"goWebExample/pkg/infrastructure/service"
+	zaplogger "goWebExample/pkg/zap"
 )
 
-// InitializeApp 是 wire 的注入函数
-func InitializeApp(config *configs.AllConfig) *server.HTTPServer {
+// InfraSet 提供基础设施依赖
+var InfraSet = wire.NewSet(
+	// Logger
+	zaplogger.NewZap,
+
+	// ServiceFactory
+	ProvideServiceFactory,
+	wire.FieldsOf(new(*container.ServiceContainer), "DBConnector"),
+
+	// Gin
+	ProvideGin,
+
+	// Handlers and Router
+	ProvideHandlers,
+	ProvideRouter,
+)
+
+// ServiceContainer 包含所有服务依赖
+type ServiceContainer struct {
+	Factory         *service.Factory
+	DBConnector     *db.DBConnector
+	EtcdConnector   *etcd.EtcdConnector
+	ServiceRegistry etcd.ServiceRegistry
+}
+
+// ProvideServiceFactory 创建服务工厂，统一管理所有连接器
+func ProvideServiceFactory(config *configs.AllConfig, logger *zap.Logger) (*container.ServiceContainer, error) {
+	// 创建服务工厂
+	factory := service.NewFactory()
+
+	container := container.NewServiceContainer(logger)
+	container.Factory = factory
+
+	// 创建数据库连接器
+	dbConnector := db.NewDBConnector(&config.Database, logger)
+	factory.RegisterConnector("db", dbConnector)
+	container.DBConnector = dbConnector
+
+	// 创建ETCD连接器
+	if config.Etcd != nil && config.Etcd.Enable {
+		etcdConnector := etcd.NewEtcdConnector(config.Etcd, logger)
+		factory.RegisterConnector("etcd", etcdConnector)
+		container.EtcdConnector = etcdConnector
+		container.ServiceRegistry = etcd.NewServiceRegistry(config, logger, etcdConnector)
+	}
+
+	// 创建Redis连接器
+	if config.Redis.Enable {
+		redisConnector := redis.NewRedisConnector(&config.Redis, logger)
+		factory.RegisterConnector("redis", redisConnector)
+	}
+
+	return container, nil
+}
+
+// ProvideGin 提供 Gin 引擎
+func ProvideGin(logger *zap.Logger) *gin.Engine {
+	return app.NewGin(logger)
+}
+
+// ProvideHandlers 提供处理器
+func ProvideHandlers(
+	logger *zap.Logger,
+	userHandler *user.UserHandler,
+	dataCenter handlers.Handler,
+) *server.Handlers {
+	return &server.Handlers{
+		User:       userHandler,
+		DataCenter: dataCenter,
+	}
+}
+
+// ProvideRouter 提供路由管理器
+func ProvideRouter(
+	engine *gin.Engine,
+	logger *zap.Logger,
+	handlers *server.Handlers,
+) *server.Router {
+	return server.NewRouter(engine, logger, handlers.User, handlers.DataCenter)
+}
+
+// InitializeApp 初始化应用程序
+func InitializeApp(config *configs.AllConfig) (*app.App, error) {
 	wire.Build(
-		// 使用 app 包中定义的 provider 集合
-		app.ProviderSet,
-		app.LoggerSet,
-		app.DatabaseSet,
-
-		// 添加 etcd 的 provider
-		etcd.NewServiceRegistry,
-		// 使用 app.NewGin 而不是 gin.Default
-		app.NewGin,
-
-		app.RouterSet,
-
-		// 使用 NewHTTPServer
-		server.NewHTTPServer,
+		InfraSet,
+		internalwire.BusinessSet,
+		app.NewApp,
 	)
-	return &server.HTTPServer{}
+	return &app.App{}, nil
 }

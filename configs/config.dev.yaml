@@ -29,6 +29,7 @@ database:
   connMaxIdleTime: 2
 
 redis:
+  enable: false
   host: localhost
   port: 6379
   password: ""

@@ -1,6 +1,8 @@
 package user
 
 import (
+	"goWebExample/pkg/infrastructure/db"
+
 	"gorm.io/gorm"
 )
 
@@ -13,33 +15,60 @@ type RepositoryUser interface {
 }
 
 type userRepositoryImpl struct {
-	db *gorm.DB
+	dbConnector *db.DBConnector
 }
 
-func NewUserRepository(db *gorm.DB) RepositoryUser {
-	return &userRepositoryImpl{db: db}
+func NewUserRepository(dbConnector *db.DBConnector) RepositoryUser {
+	return &userRepositoryImpl{dbConnector: dbConnector}
+}
+
+// getDB 获取数据库连接
+func (r *userRepositoryImpl) getDB() *gorm.DB {
+	if r.dbConnector == nil || !r.dbConnector.IsConnected() {
+		return nil
+	}
+	return r.dbConnector.GetTypedClient()
 }
 
 func (r *userRepositoryImpl) Create(user *Users) error {
-	return r.db.Create(user).Error
+	db := r.getDB()
+	if db == nil {
+		return ErrDBNotConnected
+	}
+	return db.Create(user).Error
 }
 
 func (r *userRepositoryImpl) GetByID(id uint64) (*Users, error) {
+	db := r.getDB()
+	if db == nil {
+		return nil, ErrDBNotConnected
+	}
+
 	var user Users
-	if err := r.db.First(&user, id).Error; err != nil {
+	if err := db.First(&user, id).Error; err != nil {
 		return nil, err
 	}
 	return &user, nil
 }
 
 func (r *userRepositoryImpl) GetAll() ([]Users, error) {
+	db := r.getDB()
+	if db == nil {
+		return nil, ErrDBNotConnected
+	}
+
 	var users []Users
-	if err := r.db.Find(&users).Error; err != nil {
+	if err := db.Find(&users).Error; err != nil {
 		return nil, err
 	}
 	return users, nil
 }
 
 func (r *userRepositoryImpl) Delete(id uint) error {
-	return r.db.Delete(&Users{}, id).Error
+	db := r.getDB()
+	if db == nil {
+		return ErrDBNotConnected
+	}
+
+	return db.Delete(&Users{}, id).Error
 }

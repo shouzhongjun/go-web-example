@@ -5,6 +5,8 @@ import (
 	"time"
 )
 
+const ServiceName = "datacenter"
+
 type MockDataCenter struct{}
 
 func NewMockDataCenter() *MockDataCenter {

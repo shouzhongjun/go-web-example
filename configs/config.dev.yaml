@@ -11,7 +11,7 @@ log:
   prefix: go-server-rest-api
   enableConsole: true
   enableFile: true
-  level: info
+  level: debug
   path: ./logs
 
 database:

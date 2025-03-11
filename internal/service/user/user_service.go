@@ -6,6 +6,8 @@ import (
 	"strconv"
 )
 
+const ServiceName = "user"
+
 // ServerUser 定义用户服务接口
 type ServerUser interface {
 	GetUserDetail(userID string) (*user.Users, error)

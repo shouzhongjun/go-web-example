@@ -1,7 +1,7 @@
 package user
 
 import (
-	"goWebExample/internal/infrastructure/db/mysql"
+	"goWebExample/internal/infra/db/mysql"
 
 	"gorm.io/gorm"
 )

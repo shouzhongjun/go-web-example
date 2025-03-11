@@ -6,9 +6,9 @@ import (
 
 	"go.uber.org/zap"
 
-	"goWebExample/internal/infrastructure/db/mysql"
-	"goWebExample/internal/infrastructure/di/factory"
-	"goWebExample/internal/infrastructure/discovery"
+	"goWebExample/internal/infra/db/mysql"
+	"goWebExample/internal/infra/di/factory"
+	"goWebExample/internal/infra/discovery"
 )
 
 // ServiceContainer 包含所有服务依赖

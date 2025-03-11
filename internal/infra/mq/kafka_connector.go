@@ -10,7 +10,7 @@ import (
 	"go.uber.org/zap"
 
 	"goWebExample/internal/configs"
-	"goWebExample/internal/infrastructure/connector"
+	"goWebExample/internal/infra/connector"
 )
 
 // KafkaConnector Kafka连接器

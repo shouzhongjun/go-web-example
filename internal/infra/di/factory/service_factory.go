@@ -7,7 +7,7 @@ import (
 	"go.uber.org/zap"
 
 	"goWebExample/internal/configs"
-	"goWebExample/internal/infrastructure/connector"
+	"goWebExample/internal/infra/connector"
 )
 
 // Factory 服务工厂，用于管理所有连接器

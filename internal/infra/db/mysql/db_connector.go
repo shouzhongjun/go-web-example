@@ -13,7 +13,7 @@ import (
 	"gorm.io/gorm/schema"
 
 	"goWebExample/internal/configs"
-	"goWebExample/internal/infrastructure/connector"
+	"goWebExample/internal/infra/connector"
 	gormLogger "goWebExample/pkg/logger/gorm"
 )
 

@@ -14,7 +14,7 @@ import (
 	"go.uber.org/zap"
 
 	"goWebExample/internal/configs"
-	"goWebExample/internal/infrastructure/di/container"
+	"goWebExample/internal/infra/di/container"
 	"goWebExample/pkg/utils"
 )
 

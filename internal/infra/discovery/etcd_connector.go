@@ -9,7 +9,7 @@ import (
 	"go.uber.org/zap"
 
 	"goWebExample/internal/configs"
-	"goWebExample/internal/infrastructure/connector"
+	"goWebExample/internal/infra/connector"
 )
 
 // EtcdConnector ETCD连接器
@@ -96,11 +96,42 @@ func (c *EtcdConnector) HealthCheck(ctx context.Context) (bool, error) {
 		return false, fmt.Errorf("ETCD未连接")
 	}
 
-	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	// 检查连接状态
+	statusCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
-	_, err := c.client.Status(ctx, c.config.EtcdAddr())
-	return err == nil, err
+	if _, err := c.client.Status(statusCtx, c.config.EtcdAddr()); err != nil {
+		c.Logger().Error("ETCD连接状态异常",
+			zap.Error(err))
+		return false, err
+	}
+
+	// 检查租约状态
+	if c.leaseID != 0 {
+		lease := clientv3.NewLease(c.client)
+		leaseCtx, leaseCancel := context.WithTimeout(ctx, 5*time.Second)
+		defer leaseCancel()
+
+		timeToLive, err := lease.TimeToLive(leaseCtx, c.leaseID)
+		if err != nil {
+			c.Logger().Error("获取租约状态失败",
+				zap.Error(err),
+				zap.Int64("leaseID", int64(c.leaseID)))
+			return false, err
+		}
+
+		if timeToLive.TTL <= 0 {
+			c.Logger().Error("租约已过期",
+				zap.Int64("leaseID", int64(c.leaseID)))
+			return false, fmt.Errorf("租约已过期")
+		}
+
+		c.Logger().Debug("健康检查通过",
+			zap.Int64("leaseID", int64(c.leaseID)),
+			zap.Int64("TTL", timeToLive.TTL))
+	}
+
+	return true, nil
 }
 
 // RegisterService 注册服务

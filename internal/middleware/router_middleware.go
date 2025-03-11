@@ -8,7 +8,6 @@ import (
 
 	"goWebExample/pkg/utils"
 
-	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/gzip"
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
@@ -23,11 +22,11 @@ func LoadMiddleware(logger *zap.Logger, engine *gin.Engine) {
 	// 请求ID中间件
 	engine.Use(RequestIDMiddleware())
 
+	// CORS中间件 - 需要在其他中间件之前，以确保预检请求能够正确处理
+	engine.Use(Cors(logger))
+
 	// 日志中间件
 	engine.Use(GinLogger(logger))
-
-	// CORS中间件
-	engine.Use(corsMiddleware())
 
 	// Gzip压缩
 	engine.Use(gzip.Gzip(gzip.DefaultCompression))
@@ -44,18 +43,6 @@ func LoadMiddleware(logger *zap.Logger, engine *gin.Engine) {
 
 	// 404处理
 	engine.NoRoute(notFoundHandler())
-}
-
-// corsMiddleware 返回CORS中间件配置
-func corsMiddleware() gin.HandlerFunc {
-	return cors.New(cors.Config{
-		AllowOrigins:     []string{"*"},
-		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization"},
-		ExposeHeaders:    []string{"Content-Length"},
-		AllowCredentials: true,
-		MaxAge:           12 * time.Hour,
-	})
 }
 
 // notFoundHandler 处理404路由

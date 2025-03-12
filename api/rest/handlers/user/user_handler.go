@@ -58,20 +58,21 @@ func (h *UserHandler) GetUserDetail(c *gin.Context) {
 	// 从服务注册器获取服务
 	srv, ok := service.GetRegistry().Get(user.ServiceName).(*user.UserService)
 	if !ok || srv == nil {
-		h.logger.Error("user service not initialized")
+		h.logger.Error("userDetail service not initialized")
 		c.JSON(http.StatusInternalServerError, response.Fail(http.StatusInternalServerError, "用户服务未初始化"))
 		return
 	}
 
 	userId := c.Param("userId")
-	user, err := srv.GetUserDetail(userId)
+	userDetail, err := srv.GetUserDetail(userId)
 	if err != nil {
-		h.logger.Error("failed to get user detail", zap.Error(err))
+		h.logger.Error("failed to get userDetail detail", zap.Error(err))
 		c.JSON(http.StatusNotFound, response.Fail(http.StatusNotFound, "用户不存在"))
 		return
 	}
 
-	c.JSON(http.StatusOK, response.Success(user))
+	response.SuccessWithData(c, userDetail)
+	return
 }
 
 // CreateUser 创建用户

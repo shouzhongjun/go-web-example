@@ -49,6 +49,7 @@ func (h *Handler) RegisterRoutes(group *gin.RouterGroup) {
 	v1 := group.Group("/stop")
 	{
 		v1.GET("/list", h.GetStopList) // GET /api/v1/stop/list
+		v1.GET("/price", h.GetPriceList)
 	}
 }
 
@@ -72,6 +73,23 @@ func (h *Handler) GetStopList(ctx *gin.Context) {
 	mockData := svc.GetData()
 	ctx.JSON(200, gin.H{
 		"code": 0,
+		"msg":  "success",
+		"data": mockData,
+	})
+}
+
+func (h *Handler) GetPriceList(ctx *gin.Context) {
+	// 从服务注册器获取服务
+	svc, ok := service.GetRegistry().Get(ly_stop.ServiceName).(*ly_stop.Service)
+	h.logger.Info("GetPriceList", zap.Bool("ok", ok), zap.Any("svc", svc))
+	if !ok || svc == nil {
+		ctx.JSON(500, gin.H{"error": "stop service not initialized"})
+		return
+	}
+
+	mockData := svc.GetPrice()
+	ctx.JSON(200, gin.H{
+		"code": 200,
 		"msg":  "success",
 		"data": mockData,
 	})

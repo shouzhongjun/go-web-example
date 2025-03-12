@@ -27,6 +27,7 @@ type AllConfig struct {
 	Etcd     *Etcd       `yaml:"etcd"`
 	Kafka    KafkaConfig `yaml:"kafka"`
 	MongoDB  *MongoDB    `yaml:"mongodb"`
+	Cors     *Cors       `yaml:"cors"`
 }
 
 // Log 日志配置
@@ -36,6 +37,17 @@ type Log struct {
 	EnableConsole bool   `yaml:"enableConsole"`
 	Prefix        string `yaml:"prefix"`
 	Path          string `yaml:"path"`
+}
+
+type Cors struct {
+	Enable              bool     `yaml:"enable"`
+	AllowedOrigins      []string `yaml:"allowedOrigins"`
+	AllowedMethods      []string `yaml:"allowedMethods"`
+	AllowedHeaders      []string `yaml:"allowedHeaders"`
+	ExposeHeaders       []string `yaml:"exposeHeaders"`
+	AllowCredentials    bool     `yaml:"allowCredentials"`
+	MaxAge              int      `yaml:"maxAge"`
+	AllowPrivateNetwork bool     `yaml:"allowPrivateNetwork"`
 }
 
 // Database 数据库配置

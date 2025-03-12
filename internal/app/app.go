@@ -25,7 +25,7 @@ type App struct {
 }
 
 // NewGin 创建 Gin 引擎
-func NewGin(logger *zap.Logger) *gin.Engine {
+func NewGin(config *configs.AllConfig, logger *zap.Logger) *gin.Engine {
 	// 设置为发布模式
 	gin.SetMode(gin.DebugMode)
 
@@ -33,7 +33,7 @@ func NewGin(logger *zap.Logger) *gin.Engine {
 	engine := gin.New()
 
 	// 加载所有中间件
-	middleware.LoadMiddleware(logger, engine)
+	middleware.LoadMiddleware(config, logger, engine)
 
 	return engine
 }

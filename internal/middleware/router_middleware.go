@@ -12,10 +12,12 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
 	"go.uber.org/zap"
+
+	"goWebExample/internal/configs"
 )
 
 // LoadMiddleware 加载所有中间件
-func LoadMiddleware(logger *zap.Logger, engine *gin.Engine) {
+func LoadMiddleware(config *configs.AllConfig, logger *zap.Logger, engine *gin.Engine) {
 	// 恢复中间件，用于捕获所有panic并恢复
 	engine.Use(gin.Recovery())
 
@@ -23,7 +25,9 @@ func LoadMiddleware(logger *zap.Logger, engine *gin.Engine) {
 	engine.Use(RequestIDMiddleware())
 
 	// CORS中间件 - 需要在其他中间件之前，以确保预检请求能够正确处理
-	engine.Use(Cors(logger))
+	if config.Cors != nil {
+		engine.Use(Cors(*config.Cors, logger))
+	}
 
 	// 日志中间件
 	engine.Use(GinLogger(logger))

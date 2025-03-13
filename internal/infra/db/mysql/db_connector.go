@@ -12,6 +12,7 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/schema"
 
+	"github.com/uptrace/opentelemetry-go-extra/otelgorm"
 	"goWebExample/internal/configs"
 	"goWebExample/internal/infra/connector"
 	gormLogger "goWebExample/pkg/logger/gorm"
@@ -60,7 +61,10 @@ func (c *DBConnector) Connect(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("连接MySQL失败: %w", err)
 	}
-
+	// 添加 OpenTelemetry 插件
+	if err := db.Use(otelgorm.NewPlugin()); err != nil {
+		return err
+	}
 	sqlDB, err := db.DB()
 	if err != nil {
 		return fmt.Errorf("获取SQL.DB失败: %w", err)

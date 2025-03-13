@@ -1,6 +1,10 @@
 package app
 
 import (
+	"context"
+	"fmt"
+	"log"
+
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 
@@ -13,15 +17,21 @@ import (
 	"goWebExample/internal/pkg/handlers"
 	"goWebExample/internal/pkg/module"
 	"goWebExample/internal/pkg/server"
+	"goWebExample/internal/pkg/tracer"
 	"goWebExample/internal/service"
+
+	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
+	"go.opentelemetry.io/otel/sdk/trace"
 )
 
 // App 应用程序结构体
 type App struct {
+	config     *configs.AllConfig
 	httpServer *server.HTTPServer
 	engine     *gin.Engine
 	logger     *zap.Logger
 	container  *container.ServiceContainer
+	tp         *trace.TracerProvider
 }
 
 // NewGin 创建 Gin 引擎
@@ -46,10 +56,10 @@ func NewApp(
 	container *container.ServiceContainer,
 	handlerRegistry *handlers.Registry,
 ) *App {
-	app := &App{
-		engine:    engine,
-		logger:    logger,
-		container: container,
+	// 初始化链路追踪
+	tp, err := initTracer(config, logger)
+	if err != nil {
+		log.Fatalf("初始化链路追踪失败: %v", err)
 	}
 
 	// 初始化服务注册器
@@ -79,18 +89,60 @@ func NewApp(
 		}
 	}
 
+	// 添加链路追踪中间件
+	engine.Use(otelgin.Middleware(config.Trace.ServiceName))
+
 	// 创建HTTP服务器
-	app.httpServer = server.NewHTTPServer(
+	httpServer := server.NewHTTPServer(
 		config,
 		logger,
 		engine,
 		container,
 	)
 
+	app := &App{
+		config:     config,
+		httpServer: httpServer,
+		engine:     engine,
+		logger:     logger,
+		container:  container,
+		tp:         tp,
+	}
+
+	// 设置 Shutdowner
+	httpServer.SetShutdowner(app)
+
 	return app
 }
 
-// GetHTTPServer 获取HTTP服务器实例
-func (a *App) GetHTTPServer() *server.HTTPServer {
-	return a.httpServer
+// initTracer 初始化链路追踪
+func initTracer(config *configs.AllConfig, logger *zap.Logger) (*trace.TracerProvider, error) {
+	return tracer.InitTracer(&tracer.Config{
+		ServiceName:    config.Trace.ServiceName,
+		ServiceVersion: config.Trace.ServiceVersion,
+		Environment:    config.Trace.Environment,
+		Endpoint:       config.Trace.Endpoint,
+		SamplingRatio:  config.Trace.SamplingRatio,
+	}, logger)
+}
+
+// Run 运行应用程序
+func (app *App) Run() error {
+	// 运行 HTTP 服务器（包含信号处理和优雅关闭）
+	if err := app.httpServer.RunServer(); err != nil {
+		return fmt.Errorf("运行 HTTP 服务器失败: %w", err)
+	}
+
+	return nil
+}
+
+// Shutdown 优雅关闭应用程序
+func (app *App) Shutdown(ctx context.Context) error {
+	// 关闭链路追踪
+	if err := tracer.Shutdown(ctx, app.tp, app.logger); err != nil {
+		app.logger.Error("关闭链路追踪失败", zap.Error(err))
+	}
+
+	// 关闭 HTTP 服务器（包含其他服务的关闭）
+	return app.httpServer.Shutdown(ctx)
 }

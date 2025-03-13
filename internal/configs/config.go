@@ -28,6 +28,17 @@ type AllConfig struct {
 	Kafka    KafkaConfig `yaml:"kafka"`
 	MongoDB  *MongoDB    `yaml:"mongodb"`
 	Cors     *Cors       `yaml:"cors"`
+	Trace    *Trace      `yaml:"trace"`
+}
+
+// Trace 链路追踪配置
+type Trace struct {
+	ServiceName    string  `yaml:"serviceName"`    // 服务名称
+	ServiceVersion string  `yaml:"serviceVersion"` // 服务版本
+	Environment    string  `yaml:"environment"`    // 环境（dev/prod等）
+	Endpoint       string  `yaml:"endpoint"`       // 链路追踪服务器地址
+	SamplingRatio  float64 `yaml:"samplingRatio"`  // 采样率
+	Enable         bool    `yaml:"enable"`         // 是否启用链路追踪
 }
 
 // Log 日志配置

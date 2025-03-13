@@ -25,6 +25,14 @@ cors:
   allowPrivateNetwork: true
 
 
+trace:
+  serviceName: "goWebExample"
+  serviceVersion: "1.0.0"
+  environment: "dev"
+  endpoint: "localhost:4318"  # Jaeger OTLP HTTP 端点
+  samplingRatio: 1.0
+  enable: true
+
 database:
   host: localhost
   port: 3306

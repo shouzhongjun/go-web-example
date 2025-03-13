@@ -17,76 +17,99 @@ import (
 	"goWebExample/internal/infra/di/container"
 )
 
-// HTTPServer 封装HTTP服务器及其依赖
+// Shutdowner 定义关闭接口
+type Shutdowner interface {
+	Shutdown(ctx context.Context) error
+}
+
+// HTTPServer HTTP服务器
 type HTTPServer struct {
 	config    *configs.AllConfig
 	logger    *zap.Logger
 	engine    *gin.Engine
 	container *container.ServiceContainer
+	srv       *http.Server
+	app       Shutdowner
 }
 
-// NewHTTPServer 创建一个新的HttpServer实例
+// NewHTTPServer 创建新的HTTP服务器
 func NewHTTPServer(
 	config *configs.AllConfig,
 	logger *zap.Logger,
 	engine *gin.Engine,
 	container *container.ServiceContainer,
 ) *HTTPServer {
+	srv := &http.Server{
+		Addr:           fmt.Sprintf(":%d", config.Server.Port),
+		Handler:        engine,
+		ReadTimeout:    10 * time.Second,
+		WriteTimeout:   10 * time.Second,
+		MaxHeaderBytes: 1 << 20, // 1 MB
+	}
 	return &HTTPServer{
 		config:    config,
 		logger:    logger,
 		engine:    engine,
 		container: container,
+		srv:       srv,
 	}
 }
 
-// RunServer 启动HTTP服务器
-func (s *HTTPServer) RunServer() {
+// SetShutdowner 设置应用程序实例
+func (s *HTTPServer) SetShutdowner(app Shutdowner) {
+	s.app = app
+}
+
+// RunServer 运行服务器
+func (s *HTTPServer) RunServer() error {
 	// 初始化所有服务
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
 	if err := s.container.Initialize(ctx); err != nil {
 		s.logger.Error("初始化服务失败", zap.Error(err))
-		return
+		return fmt.Errorf("初始化服务失败: %w", err)
 	}
 
-	s.startServer()
-}
-
-// startServer 配置并启动HTTP服务器
-func (s *HTTPServer) startServer() {
-	// 创建HTTP服务器
-	httpServer := &http.Server{
-		Addr:           fmt.Sprintf(":%d", s.config.Server.Port),
-		Handler:        s.engine,
-		ReadTimeout:    5 * time.Second,
-		WriteTimeout:   10 * time.Second,
-		MaxHeaderBytes: 1 << 20, // 1 MB
-	}
-
-	// 在goroutine中启动服务器
+	// 在 goroutine 中启动服务器
 	go func() {
-		s.logger.Info(fmt.Sprintf("服务器启动在 :%d", s.config.Server.Port))
+		s.logger.Info("HTTP服务器启动",
+			zap.String("地址", s.srv.Addr),
+			zap.String("服务名称", s.config.Server.ServerName),
+		)
 
-		if err := httpServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			s.logger.Fatal("HTTP服务器启动失败", zap.Error(err))
+		if err := s.srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			s.logger.Error("HTTP服务器运行失败", zap.Error(err))
 		}
 	}()
 
-	// 等待中断信号以优雅地关闭服务器
+	// 等待中断信号
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
+
 	s.logger.Info("正在关闭服务器...")
 
-	// 创建一个5秒超时的上下文
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	// 关闭服务器
+	ctx, cancel = context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	// 尝试优雅关闭服务器
-	if err := httpServer.Shutdown(ctx); err != nil {
+	if err := s.Shutdown(ctx); err != nil {
 		s.logger.Error("服务器强制关闭", zap.Error(err))
+		return fmt.Errorf("服务器强制关闭: %w", err)
+	}
+
+	return nil
+}
+
+// Shutdown 优雅关闭服务器
+func (s *HTTPServer) Shutdown(ctx context.Context) error {
+	s.logger.Info("正在关闭 HTTP 服务器...")
+
+	// 先关闭 HTTP 服务器
+	if err := s.srv.Shutdown(ctx); err != nil {
+		s.logger.Error("关闭 HTTP 服务器失败", zap.Error(err))
+		return err
 	}
 
 	// 关闭所有服务
@@ -94,5 +117,6 @@ func (s *HTTPServer) startServer() {
 	defer shutdownCancel()
 	s.container.Shutdown(shutdownCtx)
 
-	s.logger.Info(s.config.Server.ServerName + " 已退出")
+	s.logger.Info("HTTP 服务器已关闭")
+	return nil
 }

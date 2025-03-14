@@ -4,31 +4,29 @@
 package main
 
 import (
+	"github.com/google/wire"
+
 	"goWebExample/internal/app"
 	"goWebExample/internal/configs"
-	"goWebExample/internal/pkg/server"
-	"goWebExample/pkg/infrastructure/etcd"
-
-	"github.com/google/wire"
+	"goWebExample/internal/infra/di/container"
+	"goWebExample/internal/infra/providers"
+	"goWebExample/pkg/zap"
 )
 
-// InitializeApp 是 wire 的注入函数
-func InitializeApp(config *configs.AllConfig) *server.HTTPServer {
+// InfraSet 提供基础设施依赖
+var InfraSet = wire.NewSet(
+	zap.NewZap,
+	providers.ProvideServiceFactory,
+	wire.FieldsOf(new(*container.ServiceContainer), "DBConnector"),
+	providers.ProvideGin,
+	providers.ProvideHandlerRegistry,
+)
+
+// InitializeApp 初始化应用程序
+func InitializeApp(config *configs.AllConfig) (*app.App, error) {
 	wire.Build(
-		// 使用 app 包中定义的 provider 集合
-		app.ProviderSet,
-		app.LoggerSet,
-		app.DatabaseSet,
-
-		// 添加 etcd 的 provider
-		etcd.NewServiceRegistry,
-		// 使用 app.NewGin 而不是 gin.Default
-		app.NewGin,
-
-		app.RouterSet,
-
-		// 使用 NewHTTPServer
-		server.NewHTTPServer,
+		InfraSet,
+		app.NewApp,
 	)
-	return &server.HTTPServer{}
+	return &app.App{}, nil
 }

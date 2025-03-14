@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 	"net/http"
 	"time"
 
@@ -8,26 +9,32 @@ import (
 
 	"goWebExample/pkg/utils"
 
-	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/gzip"
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
 	"go.uber.org/zap"
+
+	"goWebExample/internal/configs"
 )
 
 // LoadMiddleware 加载所有中间件
-func LoadMiddleware(logger *zap.Logger, engine *gin.Engine) {
+func LoadMiddleware(config *configs.AllConfig, logger *zap.Logger, engine *gin.Engine) {
 	// 恢复中间件，用于捕获所有panic并恢复
 	engine.Use(gin.Recovery())
 
 	// 请求ID中间件
 	engine.Use(RequestIDMiddleware())
 
+	// CORS中间件 - 需要在其他中间件之前，以确保预检请求能够正确处理
+	if config.Cors != nil {
+		engine.Use(Cors(*config.Cors, logger))
+	}
+
+	// 添加链路追踪中间件
+	engine.Use(otelgin.Middleware(config.Trace.ServiceName))
+
 	// 日志中间件
 	engine.Use(GinLogger(logger))
-
-	// CORS中间件
-	engine.Use(corsMiddleware())
 
 	// Gzip压缩
 	engine.Use(gzip.Gzip(gzip.DefaultCompression))
@@ -44,18 +51,6 @@ func LoadMiddleware(logger *zap.Logger, engine *gin.Engine) {
 
 	// 404处理
 	engine.NoRoute(notFoundHandler())
-}
-
-// corsMiddleware 返回CORS中间件配置
-func corsMiddleware() gin.HandlerFunc {
-	return cors.New(cors.Config{
-		AllowOrigins:     []string{"*"},
-		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization"},
-		ExposeHeaders:    []string{"Content-Length"},
-		AllowCredentials: true,
-		MaxAge:           12 * time.Hour,
-	})
 }
 
 // notFoundHandler 处理404路由

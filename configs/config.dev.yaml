@@ -11,8 +11,27 @@ log:
   prefix: go-server-rest-api
   enableConsole: true
   enableFile: true
-  level: error
+  level: debug
   path: ./logs
+
+cors:
+  enable: true
+  allowedOrigins: ["http://localhost:8080"]
+  allowedMethods: ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"]
+  allowedHeaders: ["*"]
+  exposeHeaders: ["Content-Length"]
+  allowCredentials: false
+  maxAge: 43200
+  allowPrivateNetwork: true
+
+
+trace:
+  serviceName: "goWebExample"
+  serviceVersion: "1.0.0"
+  environment: "dev"
+  endpoint: "localhost:4318"  # Jaeger OTLP HTTP 端点
+  samplingRatio: 1.0
+  enable: true
 
 database:
   host: localhost
@@ -29,6 +48,7 @@ database:
   connMaxIdleTime: 2
 
 redis:
+  enable: false
   host: localhost
   port: 6379
   password: ""
@@ -37,11 +57,24 @@ redis:
   maxActiveConns: 10
 
 etcd:
-  enable: true
+  enable: false
   host: localhost
   port: 2379
   password: ""
-  dialTimeOut: 50
+  dialTimeOut: 5
   username: ""
-  leaseTTL: 5
+  leaseTTL: 60
+  maxRetries: 3
+  retryInterval: 1
+  healthCheck:
+    enable: true
+    interval: 10
+
+mongodb:
+  uri: "mongodb://localhost:27017"
+  maxPoolSize: 100
+  minPoolSize: 10
+  maxConnIdleTime: 60
+  username: ""
+  password: ""
 

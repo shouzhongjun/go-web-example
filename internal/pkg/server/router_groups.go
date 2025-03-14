@@ -51,7 +51,7 @@ func InitGroups(engine *gin.Engine, logger *zap.Logger, container *container.Ser
 			})
 		} else {
 			c.JSON(503, gin.H{
-				"status":   "degraded",
+				"status":   "unavailable",
 				"services": healthStatus,
 			})
 		}

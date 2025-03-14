@@ -71,7 +71,7 @@ func NewApp(
 	//engine.Use(otelgin.Middleware(config.Trace.ServiceName))
 
 	// 初始化全局路由组
-	server.InitGroups(engine, logger)
+	server.InitGroups(engine, logger, container)
 
 	// 注册所有处理器的路由
 	for _, h := range handlerRegistry.GetHandlers() {

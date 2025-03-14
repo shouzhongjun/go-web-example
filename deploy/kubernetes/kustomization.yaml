@@ -11,6 +11,8 @@ resources:
 
 namespace: default
 
-commonLabels:
-  app: go-web-example
-  environment: production 
+metadata:
+  name: go-web-example
+  labels:
+    app: go-web-example
+    environment: production

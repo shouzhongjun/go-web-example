@@ -46,13 +46,16 @@ func NewHTTPServer(
 		WriteTimeout:   10 * time.Second,
 		MaxHeaderBytes: 1 << 20, // 1 MB
 	}
-	return &HTTPServer{
+
+	server := &HTTPServer{
 		config:    config,
 		logger:    logger,
 		engine:    engine,
 		container: container,
 		srv:       srv,
 	}
+
+	return server
 }
 
 // SetShutdowner 设置应用程序实例

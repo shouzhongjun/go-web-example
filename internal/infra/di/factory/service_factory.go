@@ -99,15 +99,15 @@ func (f *Factory) InitializeAllServices(ctx context.Context) error {
 
 // initializeService 初始化单个服务
 func (f *Factory) initializeService(ctx context.Context, name string) error {
-	connector := f.GetConnector(name)
+	getConnector := f.GetConnector(name)
 
-	if connector.IsConnected() {
+	if getConnector.IsConnected() {
 		f.logger.Info("服务已连接，跳过初始化", zap.String("service", name))
 		return nil
 	}
 
 	f.logger.Info("正在初始化服务连接", zap.String("service", name))
-	return connector.Connect(ctx)
+	return getConnector.Connect(ctx)
 }
 
 // ShutdownAll 关闭所有服务
@@ -118,14 +118,14 @@ func (f *Factory) ShutdownAll(ctx context.Context) {
 	f.mu.RUnlock()
 
 	for _, name := range shutdownOrder {
-		connector := f.GetConnector(name)
+		getConnector := f.GetConnector(name)
 
-		if !connector.IsConnected() {
+		if !getConnector.IsConnected() {
 			continue
 		}
 
 		f.logger.Info("正在关闭服务", zap.String("service", name))
-		if err := connector.Disconnect(ctx); err != nil {
+		if err := getConnector.Disconnect(ctx); err != nil {
 			f.logger.Error("关闭服务失败", zap.String("service", name), zap.Error(err))
 		} else {
 			f.logger.Info("服务已关闭", zap.String("service", name))

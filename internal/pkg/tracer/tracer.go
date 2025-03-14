@@ -34,6 +34,13 @@ func InitTracer(cfg *Config, logger *zap.Logger) (*sdktrace.TracerProvider, erro
 	client := otlptracehttp.NewClient(
 		otlptracehttp.WithEndpoint(cfg.Endpoint),
 		otlptracehttp.WithInsecure(),
+		otlptracehttp.WithTimeout(5*time.Second),
+		otlptracehttp.WithRetry(otlptracehttp.RetryConfig{
+			Enabled:         true,
+			InitialInterval: 1 * time.Second,
+			MaxInterval:     5 * time.Second,
+			MaxElapsedTime:  30 * time.Second,
+		}),
 	)
 
 	exp, err := otlptrace.New(context.Background(), client)
@@ -47,6 +54,9 @@ func InitTracer(cfg *Config, logger *zap.Logger) (*sdktrace.TracerProvider, erro
 		semconv.ServiceName(cfg.ServiceName),
 		semconv.ServiceVersion(cfg.ServiceVersion),
 		semconv.DeploymentEnvironment(cfg.Environment),
+		semconv.HostName(cfg.ServiceName),
+		semconv.TelemetrySDKName("opentelemetry"),
+		semconv.TelemetrySDKLanguageGo,
 	)
 
 	// 创建 TracerProvider
@@ -54,6 +64,7 @@ func InitTracer(cfg *Config, logger *zap.Logger) (*sdktrace.TracerProvider, erro
 		sdktrace.WithBatcher(exp,
 			sdktrace.WithBatchTimeout(5*time.Second),
 			sdktrace.WithMaxExportBatchSize(100),
+			sdktrace.WithMaxQueueSize(1000),
 		),
 		sdktrace.WithSampler(sdktrace.TraceIDRatioBased(cfg.SamplingRatio)),
 		sdktrace.WithResource(res),

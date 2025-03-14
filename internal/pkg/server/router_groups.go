@@ -28,6 +28,13 @@ func InitGroups(engine *gin.Engine, logger *zap.Logger) {
 		DataCenter: engine.Group("/api/datacenter"),
 		V1:         engine.Group("/api/v1"),
 	}
+	//reqHealthCheckAll["server"] = "healthy"
+	// 注册健康检查路由
+	engine.GET("/health", func(c *gin.Context) {
+		c.JSON(200, gin.H{
+			"status": "ok",
+		})
+	})
 
 	logger.Info("路由组初始化完成")
 }

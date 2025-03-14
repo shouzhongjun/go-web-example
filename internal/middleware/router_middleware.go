@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 	"net/http"
 	"time"
 
@@ -28,6 +29,9 @@ func LoadMiddleware(config *configs.AllConfig, logger *zap.Logger, engine *gin.E
 	if config.Cors != nil {
 		engine.Use(Cors(*config.Cors, logger))
 	}
+
+	// 添加链路追踪中间件
+	engine.Use(otelgin.Middleware(config.Trace.ServiceName))
 
 	// 日志中间件
 	engine.Use(GinLogger(logger))

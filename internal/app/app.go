@@ -20,7 +20,6 @@ import (
 	"goWebExample/internal/pkg/tracer"
 	"goWebExample/internal/service"
 
-	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 	"go.opentelemetry.io/otel/sdk/trace"
 )
 
@@ -68,6 +67,9 @@ func NewApp(
 	// 初始化所有模块
 	module.GetRegistry().InitAll(logger, container)
 
+	//// 添加链路追踪中间件
+	//engine.Use(otelgin.Middleware(config.Trace.ServiceName))
+
 	// 初始化全局路由组
 	server.InitGroups(engine, logger)
 
@@ -88,9 +90,6 @@ func NewApp(
 			h.RegisterRoutes(server.GlobalGroups.API)
 		}
 	}
-
-	// 添加链路追踪中间件
-	engine.Use(otelgin.Middleware(config.Trace.ServiceName))
 
 	// 创建HTTP服务器
 	httpServer := server.NewHTTPServer(

@@ -13,6 +13,8 @@ type RepositoryUser interface {
 	GetByID(id uint64) (*Users, error)
 	GetAll() ([]Users, error)
 	Delete(id uint) error
+	GetUserByUsername(username string) (*Users, error)
+	UpdateLoginInfo(userID uint64, ip string) error
 }
 
 type userRepositoryImpl struct {
@@ -68,4 +70,30 @@ func (r *userRepositoryImpl) Delete(id uint) error {
 	}
 
 	return db.Delete(&Users{}, id).Error
+}
+
+func (r *userRepositoryImpl) GetUserByUsername(username string) (*Users, error) {
+	db := r.GetDB()
+	if db == nil {
+		return nil, ErrDBNotConnected
+	}
+
+	var user Users
+	if err := db.Where("username = ?", username).First(&user).Error; err != nil {
+		return nil, err
+	}
+	return &user, nil
+}
+
+func (r *userRepositoryImpl) UpdateLoginInfo(userID uint64, ip string) error {
+	db := r.GetDB()
+	if db == nil {
+		return ErrDBNotConnected
+	}
+
+	tx := db.Model(&Users{}).Where("id = ?", userID).Updates(map[string]interface{}{
+		"last_login":    gorm.Expr("NOW()"),
+		"last_login_ip": ip,
+	})
+	return tx.Error
 }

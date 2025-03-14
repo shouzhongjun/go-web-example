@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"time"
 
@@ -34,7 +35,7 @@ func TimeoutMiddleware(timeout time.Duration) gin.HandlerFunc {
 			return
 		case <-ctx.Done():
 			// 检查上下文是否已经超时
-			if ctx.Err() == context.DeadlineExceeded {
+			if errors.Is(ctx.Err(), context.DeadlineExceeded) {
 				// 设置超时响应
 				c.AbortWithStatusJSON(http.StatusRequestTimeout, gin.H{
 					"code":    http.StatusRequestTimeout,

@@ -10,6 +10,7 @@ import (
 
 	_ "goWebExample/api/rest/handlers/datacenter"
 	_ "goWebExample/api/rest/handlers/ly_stop"
+	_ "goWebExample/api/rest/handlers/stream"
 	_ "goWebExample/api/rest/handlers/user"
 	"goWebExample/internal/configs"
 	"goWebExample/internal/infra/di/container"

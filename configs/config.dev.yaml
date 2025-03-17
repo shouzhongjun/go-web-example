@@ -16,7 +16,7 @@ log:
 
 cors:
   enable: true
-  allowedOrigins: ["http://localhost:8080"]
+  allowedOrigins: ["*"]
   allowedMethods: ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"]
   allowedHeaders: ["*"]
   exposeHeaders: ["Content-Length"]

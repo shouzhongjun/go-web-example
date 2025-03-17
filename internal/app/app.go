@@ -8,10 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 
-	_ "goWebExample/api/rest/handlers/datacenter"
-	_ "goWebExample/api/rest/handlers/ly_stop"
-	_ "goWebExample/api/rest/handlers/stream"
-	_ "goWebExample/api/rest/handlers/user"
+	_ "goWebExample/api/rest/handlers" // 导入所有 handlers
 	"goWebExample/internal/configs"
 	"goWebExample/internal/infra/di/container"
 	"goWebExample/internal/middleware"
@@ -67,9 +64,6 @@ func NewApp(
 
 	// 初始化所有模块
 	module.GetRegistry().InitAll(logger, container)
-
-	//// 添加链路追踪中间件
-	//engine.Use(otelgin.Middleware(config.Trace.ServiceName))
 
 	// 初始化全局路由组
 	server.InitGroups(engine, logger, container)

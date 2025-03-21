@@ -2,6 +2,7 @@ package user
 
 import (
 	"goWebExample/api/rest/handlers/user/request"
+	"goWebExample/internal/middleware"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -24,7 +25,12 @@ func init() {
 		func(logger *zap.Logger, container *container.ServiceContainer) (string, interface{}) {
 			if container != nil && container.DBConnector != nil {
 				userRepository := userRepo.NewUserRepository(container.DBConnector)
-				userSvc := user.NewUserService(userRepository, logger)
+				jwtManager := container.GetJWTManager()
+				if jwtManager == nil {
+					logger.Error("无法初始化用户服务：JWT管理器未初始化")
+					return "", nil
+				}
+				userSvc := user.NewUserService(userRepository, logger, jwtManager)
 				return user.ServiceName, userSvc
 			}
 			logger.Error("无法初始化用户服务：数据库连接器未初始化")
@@ -54,7 +60,19 @@ func (h *UserHandler) GetRouteGroup() handlers.RouteGroup {
 	return handlers.API
 }
 
-// GetUserDetail 获取用户详情
+// GetUserDetail godoc
+// @Summary      获取用户详情
+// @Description  根据用户ID获取用户详细信息
+// @Tags         users
+// @Accept       json
+// @Produce      json
+// @Param        userId path string true "用户ID"
+// @Success      200  {object}  response.Response{data=user.UserDTO}
+// @Failure      401  {object}  response.Response
+// @Failure      404  {object}  response.Response
+// @Failure      500  {object}  response.Response
+// @Security     Bearer
+// @Router       /users/{userId} [get]
 func (h *UserHandler) GetUserDetail(c *gin.Context) {
 	// 从服务注册器获取服务
 	srv, ok := service.GetRegistry().Get(user.ServiceName).(*user.UserService)
@@ -76,7 +94,17 @@ func (h *UserHandler) GetUserDetail(c *gin.Context) {
 	return
 }
 
-// CreateUser 创建用户
+// CreateUser godoc
+// @Summary      创建用户
+// @Description  创建新用户
+// @Tags         users
+// @Accept       json
+// @Produce      json
+// @Success      200  {object}  response.Response
+// @Failure      401  {object}  response.Response
+// @Failure      500  {object}  response.Response
+// @Security     Bearer
+// @Router       /users [post]
 func (h *UserHandler) CreateUser(c *gin.Context) {
 	// 从服务注册器获取服务
 	srv, ok := service.GetRegistry().Get(user.ServiceName).(*user.UserService)
@@ -89,7 +117,18 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 	c.JSON(http.StatusOK, response.SuccessWithMessage("创建用户功能待实现", nil))
 }
 
-// UpdateUser 更新用户
+// UpdateUser godoc
+// @Summary      更新用户
+// @Description  更新用户信息
+// @Tags         users
+// @Accept       json
+// @Produce      json
+// @Param        userId path string true "用户ID"
+// @Success      200  {object}  response.Response
+// @Failure      401  {object}  response.Response
+// @Failure      500  {object}  response.Response
+// @Security     Bearer
+// @Router       /users/{userId} [put]
 func (h *UserHandler) UpdateUser(c *gin.Context) {
 	// 从服务注册器获取服务
 	srv, ok := service.GetRegistry().Get(user.ServiceName).(*user.UserService)
@@ -105,7 +144,18 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 	}))
 }
 
-// DeleteUser 删除用户
+// DeleteUser godoc
+// @Summary      删除用户
+// @Description  删除指定用户
+// @Tags         users
+// @Accept       json
+// @Produce      json
+// @Param        userId path string true "用户ID"
+// @Success      200  {object}  response.Response
+// @Failure      401  {object}  response.Response
+// @Failure      500  {object}  response.Response
+// @Security     Bearer
+// @Router       /users/{userId} [delete]
 func (h *UserHandler) DeleteUser(c *gin.Context) {
 	// 从服务注册器获取服务
 	srv, ok := service.GetRegistry().Get(user.ServiceName).(*user.UserService)
@@ -121,7 +171,17 @@ func (h *UserHandler) DeleteUser(c *gin.Context) {
 	}))
 }
 
-// ListUsers 获取用户列表
+// ListUsers godoc
+// @Summary      获取用户列表
+// @Description  获取所有用户列表
+// @Tags         users
+// @Accept       json
+// @Produce      json
+// @Success      200  {object}  response.Response
+// @Failure      401  {object}  response.Response
+// @Failure      500  {object}  response.Response
+// @Security     Bearer
+// @Router       /users [get]
 func (h *UserHandler) ListUsers(c *gin.Context) {
 	// 从服务注册器获取服务
 	srv, ok := service.GetRegistry().Get(user.ServiceName).(*user.UserService)
@@ -134,6 +194,17 @@ func (h *UserHandler) ListUsers(c *gin.Context) {
 	c.JSON(http.StatusOK, response.SuccessWithMessage("获取用户列表功能待实现", nil))
 }
 
+// LoginHandler godoc
+// @Summary      用户登录
+// @Description  用户登录并返回JWT token
+// @Tags         users
+// @Accept       json
+// @Produce      json
+// @Param        request body request.LoginRequest true "登录请求参数"
+// @Success      200  {object}  response.Response{data=user.AuthResponse}
+// @Failure      400  {object}  response.Response
+// @Failure      500  {object}  response.Response
+// @Router       /users/login [post]
 func (h *UserHandler) LoginHandler(ctx *gin.Context) {
 	// 从服务注册器获取服务
 	srv, ok := service.GetRegistry().Get(user.ServiceName).(*user.UserService)
@@ -159,20 +230,31 @@ func (h *UserHandler) LoginHandler(ctx *gin.Context) {
 }
 
 // RegisterRoutes 注册用户相关路由
-// 实现 handlers.Handler 接口
 func (h *UserHandler) RegisterRoutes(apiGroup *gin.RouterGroup) {
 	if h == nil {
 		panic("UserHandler is nil when registering routes")
 	}
 
+	// 从服务注册器获取 JWT 管理器
+	srv, ok := service.GetRegistry().Get(user.ServiceName).(*user.UserService)
+	if !ok || srv == nil {
+		h.logger.Error("user service not initialized")
+		return
+	}
+
 	userGroup := apiGroup.Group("/users")
 	{
-		// 基本用户操作
-		userGroup.GET("/:userId", h.GetUserDetail)
-		userGroup.POST("", h.CreateUser)
-		userGroup.PUT("/:userId", h.UpdateUser)
-		userGroup.DELETE("/:userId", h.DeleteUser)
-		userGroup.GET("", h.ListUsers)
+		// 公开路由
 		userGroup.POST("/login", h.LoginHandler)
+
+		// 需要认证的路由
+		auth := userGroup.Use(middleware.JWTAuthMiddleware(srv.GetJWTManager(), h.logger))
+		{
+			auth.GET("/:userId", h.GetUserDetail)
+			auth.POST("", h.CreateUser)
+			auth.PUT("/:userId", h.UpdateUser)
+			auth.DELETE("/:userId", h.DeleteUser)
+			auth.GET("", h.ListUsers)
+		}
 	}
 }

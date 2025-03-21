@@ -9,6 +9,7 @@ type Users struct {
 	ID                  uint64         `gorm:"primaryKey;autoIncrement;comment:'主键ID'" json:"ID,omitempty"`
 	UUID                string         `gorm:"type:char(36);unique;not null;comment:'全局唯一标识符'" json:"UUID,omitempty"`
 	Username            string         `gorm:"type:varchar(50);unique;not null;comment:'用户名'" json:"username,omitempty"`
+	Nickname            string         `gorm:"type:varchar(50);comment:'昵称'" json:"nickname,omitempty"`
 	PasswordHash        string         `gorm:"type:varchar(255);not null;comment:'密码哈希值'" json:"-"`
 	Email               string         `gorm:"type:varchar(255);unique;not null;comment:'电子邮箱'" json:"email,omitempty"`
 	EmailVerified       bool           `gorm:"type:tinyint(1);default:0;not null;comment:'邮箱验证状态'" json:"emailVerified,omitempty"`

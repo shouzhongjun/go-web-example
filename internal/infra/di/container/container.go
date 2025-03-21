@@ -3,6 +3,7 @@ package container
 import (
 	"context"
 	"fmt"
+	"goWebExample/internal/pkg/jwt"
 
 	"go.uber.org/zap"
 
@@ -17,6 +18,7 @@ type ServiceContainer struct {
 	DBConnector     *mysql.DBConnector
 	EtcdConnector   *discovery.EtcdConnector
 	ServiceRegistry discovery.ServiceRegistry
+	JWTManager      *jwt.JwtManager
 	logger          *zap.Logger
 }
 
@@ -104,4 +106,9 @@ func (c *ServiceContainer) GetEtcdConnector() *discovery.EtcdConnector {
 // GetServiceRegistry 获取服务注册器
 func (c *ServiceContainer) GetServiceRegistry() discovery.ServiceRegistry {
 	return c.ServiceRegistry
+}
+
+// GetJWTManager 获取 JWT 管理器
+func (c *ServiceContainer) GetJWTManager() *jwt.JwtManager {
+	return c.JWTManager
 }

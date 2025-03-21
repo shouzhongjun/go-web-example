@@ -20,15 +20,18 @@ func init() {
 
 // AllConfig 应用全局配置
 type AllConfig struct {
+	Model    string      `yaml:"model"`
 	Server   Server      `yaml:"server"`
 	Log      Log         `yaml:"log"`
-	Database Database    `yaml:"database"`
-	Redis    Redis       `yaml:"redis"`
-	Etcd     *Etcd       `yaml:"etcd"`
-	Kafka    KafkaConfig `yaml:"kafka"`
-	MongoDB  *MongoDB    `yaml:"mongodb"`
 	Cors     *Cors       `yaml:"cors"`
 	Trace    *Trace      `yaml:"trace"`
+	Database Database    `yaml:"database"`
+	Redis    Redis       `yaml:"redis"`
+	Kafka    KafkaConfig `yaml:"kafka"`
+	Etcd     *Etcd       `yaml:"etcd"`
+	MongoDB  *MongoDB    `yaml:"mongodb"`
+	JWT      JWTConfig   `yaml:"jwt"`
+	Swagger  Swagger     `yaml:"swagger"`
 }
 
 // Trace 链路追踪配置
@@ -169,11 +172,14 @@ func ReadConfig(configPath string) *AllConfig {
 }
 
 type KafkaConfig struct {
+	Host      string   `yaml:"host"`
+	Port      int      `yaml:"port"`
 	Brokers   []string `yaml:"brokers"`
 	Topic     string   `yaml:"topic"`
 	GroupID   string   `yaml:"groupId"`
 	BatchSize int      `yaml:"batchSize"`
 	Async     bool     `yaml:"async"`
+	Enable    bool     `yaml:"enable"`
 }
 
 // KafkaBrokers 获取Kafka broker地址列表
@@ -197,4 +203,15 @@ type MongoDB struct {
 	MaxConnIdleTime int    `yaml:"maxConnIdleTime"`
 	Username        string `yaml:"username"`
 	Password        string `yaml:"password"`
+}
+
+type JWTConfig struct {
+	SecretKey string        `yaml:"secretKey"`
+	Issuer    string        `yaml:"issuer"`
+	Duration  time.Duration `yaml:"duration"`
+}
+
+// Swagger Swagger 配置
+type Swagger struct {
+	Enable bool `yaml:"enable"` // 是否启用 Swagger
 }

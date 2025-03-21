@@ -1,9 +1,10 @@
 package middleware
 
 import (
-	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 	"net/http"
 	"time"
+
+	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 
 	"github.com/go-playground/validator/v10"
 
@@ -19,6 +20,10 @@ import (
 
 // LoadMiddleware 加载所有中间件
 func LoadMiddleware(config *configs.AllConfig, logger *zap.Logger, engine *gin.Engine) {
+	// 配置 Gin 路由选项
+	engine.RedirectTrailingSlash = true
+	engine.RedirectFixedPath = true
+
 	// 恢复中间件，用于捕获所有panic并恢复
 	engine.Use(gin.Recovery())
 

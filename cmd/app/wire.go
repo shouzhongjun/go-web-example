@@ -6,6 +6,7 @@ package main
 import (
 	"github.com/google/wire"
 
+	_ "goWebExample/docs/swagger"
 	"goWebExample/internal/app"
 	"goWebExample/internal/configs"
 	"goWebExample/internal/infra/di/container"
@@ -17,7 +18,10 @@ import (
 var InfraSet = wire.NewSet(
 	zap.NewZap,
 	providers.ProvideServiceFactory,
-	wire.FieldsOf(new(*container.ServiceContainer), "DBConnector"),
+	wire.FieldsOf(new(*container.ServiceContainer),
+		"DBConnector",
+		"JWTManager",
+	),
 	providers.ProvideGin,
 	providers.ProvideHandlerRegistry,
 )

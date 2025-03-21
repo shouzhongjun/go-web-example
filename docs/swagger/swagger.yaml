@@ -1,0 +1,316 @@
+basePath: /api
+definitions:
+  ly_stop.DataMock:
+    properties:
+      BED_NO:
+        type: string
+      NAME:
+        type: string
+      OPERATING_ROOM_NO:
+        type: string
+      STA:
+        type: string
+    type: object
+  request.LoginRequest:
+    properties:
+      password:
+        type: string
+      username:
+        type: string
+    required:
+    - password
+    - username
+    type: object
+  response.Response:
+    properties:
+      code:
+        type: integer
+      message:
+        type: string
+      trace_id:
+        description: 追踪ID，用于日志追踪
+        type: string
+    type: object
+  user.AuthResponse:
+    properties:
+      accessToken:
+        type: string
+      expiresIn:
+        type: integer
+      tokenType:
+        type: string
+      user:
+        $ref: '#/definitions/user.UserDTO'
+    type: object
+  user.UserDTO:
+    properties:
+      avatarURL:
+        type: string
+      birthdate:
+        type: string
+      createdAt:
+        type: string
+      email:
+        type: string
+      emailVerified:
+        type: boolean
+      firstName:
+        type: string
+      gender:
+        type: string
+      is2FAEnabled:
+        type: boolean
+      isActive:
+        type: boolean
+      isSuperuser:
+        type: boolean
+      lastLogin:
+        type: string
+      lastLoginIP:
+        type: string
+      lastName:
+        type: string
+      locale:
+        type: string
+      nickname:
+        type: string
+      phoneCountryCode:
+        type: string
+      phoneNumber:
+        type: string
+      registrationIP:
+        type: string
+      timezone:
+        type: string
+      updatedAt:
+        type: string
+      username:
+        type: string
+      uuid:
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact:
+    email: support@swagger.io
+    name: API Support
+    url: http://www.swagger.io/support
+  description: This is a sample server for GoWebExample.
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: http://swagger.io/terms/
+  title: GoWebExample API
+  version: "1.0"
+paths:
+  /users:
+    get:
+      consumes:
+      - application/json
+      description: 获取所有用户列表
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - Bearer: []
+      summary: 获取用户列表
+      tags:
+      - users
+    post:
+      consumes:
+      - application/json
+      description: 创建新用户
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - Bearer: []
+      summary: 创建用户
+      tags:
+      - users
+  /users/{userId}:
+    delete:
+      consumes:
+      - application/json
+      description: 删除指定用户
+      parameters:
+      - description: 用户ID
+        in: path
+        name: userId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - Bearer: []
+      summary: 删除用户
+      tags:
+      - users
+    get:
+      consumes:
+      - application/json
+      description: 根据用户ID获取用户详细信息
+      parameters:
+      - description: 用户ID
+        in: path
+        name: userId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/user.UserDTO'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - Bearer: []
+      summary: 获取用户详情
+      tags:
+      - users
+    put:
+      consumes:
+      - application/json
+      description: 更新用户信息
+      parameters:
+      - description: 用户ID
+        in: path
+        name: userId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - Bearer: []
+      summary: 更新用户
+      tags:
+      - users
+  /users/login:
+    post:
+      consumes:
+      - application/json
+      description: 用户登录并返回JWT token
+      parameters:
+      - description: 登录请求参数
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/user.AuthResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: 用户登录
+      tags:
+      - users
+  /v1/stop/list:
+    get:
+      consumes:
+      - application/json
+      description: 获取所有科室的停诊信息
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/ly_stop.DataMock'
+            type: array
+      summary: 获取停诊列表
+      tags:
+      - 停诊服务
+schemes:
+- http
+- https
+securityDefinitions:
+  Bearer:
+    description: Type "Bearer" followed by a space and JWT token.
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

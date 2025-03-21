@@ -2,6 +2,7 @@ package user
 
 import (
 	"fmt"
+	jwtpkg "goWebExample/internal/pkg/jwt"
 	"goWebExample/internal/repository/user"
 	"strconv"
 	"time"
@@ -14,9 +15,9 @@ const TimeFormat = "2006-01-02 15:04:05"
 
 // UserDTO 用户数据传输对象
 type UserDTO struct {
-	ID               uint64  `json:"ID,omitempty"`
-	UUID             string  `json:"UUID,omitempty"`
+	UUID             string  `json:"uuid,omitempty"`
 	Username         string  `json:"username,omitempty"`
+	Nickname         string  `json:"nickname,omitempty"`
 	Email            string  `json:"email,omitempty"`
 	EmailVerified    bool    `json:"emailVerified,omitempty"`
 	PhoneCountryCode *string `json:"phoneCountryCode,omitempty"`
@@ -38,6 +39,14 @@ type UserDTO struct {
 	LastLoginIP      *string `json:"lastLoginIP,omitempty"`
 }
 
+// AuthResponse 认证响应结构体
+type AuthResponse struct {
+	User        *UserDTO `json:"user"`
+	AccessToken string   `json:"accessToken"`
+	TokenType   string   `json:"tokenType"`
+	ExpiresIn   int64    `json:"expiresIn"`
+}
+
 // formatTime 格式化时间
 func formatTime(t *time.Time) string {
 	if t == nil {
@@ -53,9 +62,9 @@ func toDTO(u *user.Users) *UserDTO {
 	}
 
 	return &UserDTO{
-		ID:               u.ID,
 		UUID:             u.UUID,
 		Username:         u.Username,
+		Nickname:         u.Nickname,
 		Email:            u.Email,
 		EmailVerified:    u.EmailVerified,
 		PhoneCountryCode: u.PhoneCountryCode,
@@ -87,11 +96,16 @@ type ServerUser interface {
 type UserService struct {
 	repo   user.RepositoryUser
 	logger *zap.Logger
+	jwtMgr *jwtpkg.JwtManager
 }
 
 // NewUserService 创建 UserService 实例
-func NewUserService(repo user.RepositoryUser, logger *zap.Logger) *UserService {
-	return &UserService{repo: repo, logger: logger}
+func NewUserService(repo user.RepositoryUser, logger *zap.Logger, jwtMgr *jwtpkg.JwtManager) *UserService {
+	return &UserService{
+		repo:   repo,
+		logger: logger,
+		jwtMgr: jwtMgr,
+	}
 }
 
 // GetUserDetail 根据 userID 获取用户详细信息
@@ -111,7 +125,7 @@ func (s *UserService) GetUserDetail(userID string) (*UserDTO, error) {
 	return toDTO(userInfo), nil
 }
 
-func (s *UserService) Login(username string, password string, ip string) (*UserDTO, error) {
+func (s *UserService) Login(username string, password string, ip string) (*AuthResponse, error) {
 	s.logger.Info("用户登录", zap.String("username", username), zap.String("ip", ip))
 
 	// 1. 根据用户名获取用户信息
@@ -131,11 +145,56 @@ func (s *UserService) Login(username string, password string, ip string) (*UserD
 		return nil, fmt.Errorf("用户被锁定")
 	}
 
-	// 3. 更新登录信息
+	userDTO := toDTO(userInfo)
+
+	// 3. 使用 jwtMgr 生成 token
+	token, err := s.jwtMgr.GenerateToken(
+		userDTO.UUID,
+		userDTO.Username,
+		userDTO.Nickname,
+		userDTO.IsSuperuser,
+	)
+	if err != nil {
+		s.logger.Error("生成token失败", zap.String("username", username), zap.Error(err))
+		return nil, fmt.Errorf("生成token失败: %w", err)
+	}
+
+	// 4. 更新登录信息
 	if err := s.repo.UpdateLoginInfo(userInfo.ID, ip); err != nil {
 		s.logger.Error("更新登录信息失败", zap.String("username", username), zap.Error(err))
-		return toDTO(userInfo), nil
+		// 即使更新登录信息失败，仍然允许用户登录
+	}
+
+	return &AuthResponse{
+		User:        userDTO,
+		AccessToken: token,
+		TokenType:   "Bearer",
+		ExpiresIn:   int64(24 * time.Hour.Seconds()), // 与 JWT 配置中的 Duration 保持一致
+	}, nil
+}
+
+// GetUserFromToken 从 token 中获取用户信息
+func (s *UserService) GetUserFromToken(tokenString string) (*UserDTO, error) {
+	claims, err := s.jwtMgr.ParseToken(tokenString)
+	if err != nil {
+		return nil, err
+	}
+
+	// 从数据库获取最新的用户信息
+	id, err := strconv.ParseUint(claims.UserID, 10, 64)
+	if err != nil {
+		return nil, fmt.Errorf("invalid userID in token: %w", err)
+	}
+
+	userInfo, err := s.repo.GetByID(id)
+	if err != nil {
+		return nil, err
 	}
 
 	return toDTO(userInfo), nil
+}
+
+// GetJWTManager 获取 JWT 管理器
+func (s *UserService) GetJWTManager() *jwtpkg.JwtManager {
+	return s.jwtMgr
 }

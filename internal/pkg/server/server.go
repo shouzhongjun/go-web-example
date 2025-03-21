@@ -74,6 +74,9 @@ func (s *HTTPServer) RunServer() error {
 		return fmt.Errorf("初始化服务失败: %w", err)
 	}
 
+	// 初始化 Swagger
+	InitSwagger(s.config, s.logger)
+
 	// 在 goroutine 中启动服务器
 	go func() {
 		s.logger.Info("HTTP服务器启动",

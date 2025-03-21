@@ -7,6 +7,9 @@ server:
   host: 0.0.0.0
   version: v1.0.0
 
+swagger:
+  enable: true
+
 log:
   prefix: go-server-rest-api
   enableConsole: true
@@ -16,7 +19,7 @@ log:
 
 cors:
   enable: true
-  allowedOrigins: ["http://localhost:8080"]
+  allowedOrigins: ["*"]
   allowedMethods: ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"]
   allowedHeaders: ["*"]
   exposeHeaders: ["Content-Length"]
@@ -43,9 +46,15 @@ database:
   maxIdleConns: 10
   maxOpenConns: 10
   connMaxLifetime: 5
-  logLevel: warn
+  logLevel: debug
   trace: true
   connMaxIdleTime: 2
+
+jwt:
+  secretKey:  "secretKey"  # 在生产环境中应该使用更安全的密钥
+  issuer: "goWebExample"
+  duration: 24h
+
 
 redis:
   enable: false

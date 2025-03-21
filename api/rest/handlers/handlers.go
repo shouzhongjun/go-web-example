@@ -2,6 +2,7 @@ package handlers
 
 import (
 	// 在这里导入所有的 handlers
+	_ "goWebExample/api/protobuf/users"
 	_ "goWebExample/api/rest/handlers/datacenter"
 	_ "goWebExample/api/rest/handlers/ly_stop"
 	_ "goWebExample/api/rest/handlers/stream"

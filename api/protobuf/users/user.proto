@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package pb;
+
+option go_package = "goWebExample/api/protobuf/users/pb";
+
+// 登录请求消息
+message LoginRequest {
+  string username = 1;
+  string password = 2;
+}
+
+// 登录响应消息
+message LoginResponse {
+  string token = 1;
+  string nickname = 2;
+  string email = 3;
+  string error = 4;
+} 

@@ -1,9 +1,9 @@
 package stream
 
 import (
-	"encoding/json"
 	"net/http"
 
+	"github.com/bytedance/sonic"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 
@@ -81,7 +81,7 @@ func (h *StreamHandler) HandleStream(c *gin.Context) {
 	// 发送数据
 	for msg := range stream {
 		data := map[string]string{"message": msg}
-		jsonData, err := json.Marshal(data)
+		jsonData, err := sonic.Marshal(data)
 		if err != nil {
 			h.logger.Error("failed to marshal message", zap.Error(err))
 			continue

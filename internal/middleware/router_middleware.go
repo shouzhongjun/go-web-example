@@ -47,9 +47,7 @@ func LoadMiddleware(config *configs.AllConfig, logger *zap.Logger, engine *gin.E
 	// 请求超时中间件
 	engine.Use(TimeoutMiddleware(10 * time.Second))
 
-	// 限流中间件 - 每秒允许10个请求，最多允许20个突发请求
-	limiter := NewIPRateLimiter(10, 20)
-	engine.Use(RateLimitMiddleware(limiter))
+	engine.Use(RateLimitMiddleware(config))
 
 	// 使用utils包中的全局验证器
 	setupValidator(logger)

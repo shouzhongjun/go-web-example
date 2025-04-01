@@ -14,7 +14,7 @@ log:
   prefix: go-server-rest-api
   enableConsole: true
   enableFile: true
-  level: debug
+  level: info
   path: ./logs
 
 cors:
@@ -86,4 +86,25 @@ mongodb:
   maxConnIdleTime: 60
   username: ""
   password: ""
+
+# 限流配置
+rateLimiter:
+  enable: true
+  rate: 10
+  burst: 10
+  duration: 1
+  strategy: "local"
+  local:
+    capacity: 100
+    interval: 1
+    maxWaitTime: 1
+    maxWaitCount: 100
+    maxWaitCountPerSecond: 100
+    maxWaitCountPerMinute: 100
+    maxWaitCountPerHour: 100
+    maxWaitCountPerDay: 100
+    maxWaitCountPerMonth: 100
+    maxWaitCountPerYear: 100
+    maxWaitCountPerDecade: 100
+
 

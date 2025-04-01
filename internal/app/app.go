@@ -33,8 +33,15 @@ type App struct {
 
 // NewGin 创建 Gin 引擎
 func NewGin(config *configs.AllConfig, logger *zap.Logger) *gin.Engine {
-	// 设置为发布模式
-	gin.SetMode(gin.DebugMode)
+	switch config.Log.Level {
+	case "debug":
+		gin.SetMode(gin.DebugMode)
+	case "release", "info", "warn", "error":
+		gin.SetMode(gin.ReleaseMode)
+	default:
+		// 默认使用 release 模式，这样更安全
+		gin.SetMode(gin.ReleaseMode)
+	}
 
 	// 创建引擎
 	engine := gin.New()

@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"goWebExample/internal/configs"
 	"net/http"
 	"sync"
 	"time"
@@ -60,7 +61,9 @@ func (i *IPRateLimiter) CleanupLimiters() {
 }
 
 // RateLimitMiddleware 限流中间件
-func RateLimitMiddleware(limiter *IPRateLimiter) gin.HandlerFunc {
+func RateLimitMiddleware(config *configs.AllConfig) gin.HandlerFunc {
+	limiter := NewIPRateLimiter(rate.Limit(config.RateLimiter.Rate), config.RateLimiter.Burst)
+
 	return func(c *gin.Context) {
 		ip := c.ClientIP()
 		if !limiter.GetLimiter(ip).Allow() {

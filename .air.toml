@@ -1,0 +1,55 @@
+root = "."
+tmp_dir = "tmp"
+
+[build]
+# 构建命令
+cmd = "go build -ldflags=\"-X 'main.Version=$(git rev-parse --abbrev-ref HEAD)' -X 'main.BuildTime=$(date \"+%Y-%m-%d %H:%M:%S\")' -X 'main.CommitSHA=$(git rev-parse --short HEAD 2>/dev/null || echo unknown)'\" -o ./tmp/main cmd/app/main.go cmd/app/wire_gen.go"
+# 二进制文件路径
+bin = "./tmp/main"
+# 自定义构建参数
+full_bin = "./tmp/main"
+# 监听以下文件扩展名的改变
+include_ext = ["go", "tpl", "tmpl", "html", "yaml", "yml"]
+# 忽略这些文件扩展名或目录
+exclude_dir = ["assets", "tmp", "vendor", "frontend/node_modules", ".git", "docs"]
+# 监听以下指定目录的文件
+include_dir = []
+# 监听以下指定文件
+include_file = []
+# 排除以下文件
+exclude_file = []
+# 退出时是否清理临时目录
+clean_on_exit = true
+# 发送中断信号给应用程序，而不是终止进程
+send_interrupt = true
+# 中断信号后的延迟时间
+kill_delay = "0s"
+# air的日志文件名，该文件位于tmp_dir中
+log = "air.log"
+# 在执行cmd之前，执行以下命令
+pre_cmd = ["cd cmd/app && wire"]
+# 在执行cmd之后，执行以下命令
+post_cmd = []
+# 是否包含子目录
+recursive = true
+# 监听文件变化的延迟时间
+delay = 1000 # ms
+# 启动时是否立即构建
+start_at_launch = true
+
+[log]
+# 显示日志时间
+time = true
+# 显示文件名
+main_only = false
+
+[color]
+# 自定义每个部分的颜色
+main = "magenta"
+watcher = "cyan"
+build = "yellow"
+runner = "green"
+
+[screen]
+clear_on_rebuild = true
+keep_scroll = true 

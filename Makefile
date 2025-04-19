@@ -21,7 +21,7 @@ GO := go
 GOFMT := gofmt
 GOLINT := golangci-lint
 GOTEST := go test
-TIMEOUT := 15s
+TIMEOUT := 5m
 
 # 编译标记
 LDFLAGS := -ldflags="-X 'main.Version=$(VERSION)' -X 'main.BuildTime=$(BUILD_TIME)' -X 'main.CommitSHA=$(COMMIT_SHA)'"

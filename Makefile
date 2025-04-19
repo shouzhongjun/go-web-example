@@ -78,14 +78,19 @@ build: wire
 .PHONY: wire
 wire:
 	@printf "$(BLUE)>> Generating wire_gen.go...$(RESET)\n"
+	@which wire > /dev/null || (printf "$(YELLOW)wire is not installed. Installing...$(RESET)\n" && go install github.com/google/wire/cmd/wire@latest)
 	@cd cmd/app && wire
 
 # 开发模式运行（支持热重载）
 .PHONY: dev
 dev: wire
 	@printf "$(GREEN)>> Running in development mode...$(RESET)\n"
-	@which air > /dev/null || go install github.com/air-verse/air@latest
+	@which air > /dev/null || (printf "$(YELLOW)air is not installed. Installing...$(RESET)\n" && go install github.com/air-verse/air@latest)
 	@mkdir -p tmp
+	@if ! which air > /dev/null; then \
+		printf "$(RED)Failed to install air. Please install it manually: go install github.com/air-verse/air@latest$(RESET)\n"; \
+		exit 1; \
+	fi
 	air
 
 # 运行应用
@@ -98,7 +103,11 @@ run: wire
 .PHONY: lint
 lint:
 	@printf "$(BLUE)>> Running linter...$(RESET)\n"
-	@which $(GOLINT) > /dev/null || curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin
+	@which $(GOLINT) > /dev/null || (printf "$(YELLOW)golangci-lint is not installed. Installing...$(RESET)\n" && curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin)
+	@if ! which $(GOLINT) > /dev/null; then \
+		printf "$(RED)Failed to install golangci-lint. Please install it manually: go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest$(RESET)\n"; \
+		exit 1; \
+	fi
 	$(GOLINT) run ./... --timeout=$(TIMEOUT)
 
 # 格式化代码
@@ -171,17 +180,26 @@ check-tools:
 .PHONY: swagger
 swagger:
 	@printf "$(BLUE)>> Generating swagger docs...$(RESET)\n"
-	@which swag > /dev/null || go install github.com/swaggo/swag/cmd/swag@latest
-	@swag init --parseDependency --parseInternal --output ./docs
+	@which swag > /dev/null || (printf "$(YELLOW)swag is not installed. Installing...$(RESET)\n" && go install github.com/swaggo/swag/cmd/swag@latest)
+	@if ! which swag > /dev/null; then \
+		printf "$(RED)Failed to install swag. Please install it manually: go install github.com/swaggo/swag/cmd/swag@latest$(RESET)\n"; \
+		exit 1; \
+	fi
+	@swag init -g cmd/app/main.go -o ./docs/swagger
+	@if [ $? -ne 0 ]; then \
+		printf "$(RED)Failed to generate swagger docs. Please check your code annotations.$(RESET)\n"; \
+		exit 1; \
+	fi
 	@printf "$(GREEN)Swagger docs generated in ./docs$(RESET)\n"
-	@printf "$(GREEN)Swagger UI: http://localhost:8080/swagger/index.html$(RESET)\n"
-	@printf "$(GREEN)Swagger JSON: http://localhost:8080/swagger/doc.json$(RESET)\n"
+	@printf "$(GREEN)Swagger UI: http://localhost:8080/api/swagger/index.html$(RESET)\n"
+	@printf "$(GREEN)Swagger JSON: http://localhost:8080/api/swagger/doc.json$(RESET)\n"
+
 # 帮助信息
 .PHONY: help
 help:
 	@printf "$(BLUE)可用命令:$(RESET)\n"
 	@printf "$(GREEN)基础命令:$(RESET)\n"
-	@printf "  make build          - 构建当前平台的可执行文件\n"
+	@printf "  make build         - 构建当前平台的可执行文件\n"
 	@printf "  make run           - 运行应用程序\n"
 	@printf "  make dev           - 开发模式运行（支持热重载）\n"
 	@printf "  make clean         - 清理构建文件\n"
@@ -200,3 +218,4 @@ help:
 	@printf "\n$(GREEN)其他:$(RESET)\n"
 	@printf "  make version       - 显示版本信息\n"
 	@printf "  make check-tools   - 检查必要工具是否安装\n"
+	@printf "  make swagger       - 生成swagger文档\n"

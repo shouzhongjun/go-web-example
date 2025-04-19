@@ -46,7 +46,12 @@ func TestLogin(t *testing.T) {
 				errChan <- fmt.Errorf("task %d: request error: %v", id, err)
 				return
 			}
-			defer res.Body.Close()
+			defer func(Body io.ReadCloser) {
+				err := Body.Close()
+				if err != nil {
+					errChan <- fmt.Errorf("task %d: response body close error: %v", id, err)
+				}
+			}(res.Body)
 
 			body, err := io.ReadAll(res.Body)
 			if err != nil {

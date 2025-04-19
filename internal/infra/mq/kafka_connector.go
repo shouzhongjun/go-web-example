@@ -78,7 +78,7 @@ func (c *KafkaConnector) Connect(ctx context.Context) error {
 	// 验证连接
 	if err := c.checkConnection(ctx); err != nil {
 		c.closeAll()
-		return fmt.Errorf("Kafka连接验证失败: %w", err)
+		return fmt.Errorf("kafka连接验证失败: %w", err)
 	}
 
 	c.SetConnected(true)

@@ -26,7 +26,7 @@ func JWTAuthMiddleware(jwtManager *jwt.JwtManager, logger *zap.Logger) gin.Handl
 
 		// 检查 token 格式
 		parts := strings.SplitN(authHeader, " ", 2)
-		if !(len(parts) == 2 && parts[0] == "Bearer") {
+		if len(parts) != 2 || parts[0] != "Bearer" {
 			logger.Warn("token格式错误")
 			c.JSON(http.StatusUnauthorized, response.Fail(http.StatusUnauthorized, "token格式错误"))
 			c.Abort()

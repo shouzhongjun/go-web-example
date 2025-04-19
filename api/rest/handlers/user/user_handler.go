@@ -91,7 +91,6 @@ func (h *UserHandler) GetUserDetail(c *gin.Context) {
 	}
 
 	response.SuccessWithData(c, userDetail)
-	return
 }
 
 // CreateUser godoc
@@ -226,7 +225,6 @@ func (h *UserHandler) LoginHandler(ctx *gin.Context) {
 		return
 	}
 	response.SuccessWithData(ctx, users)
-	return
 }
 
 // RegisterRoutes 注册用户相关路由

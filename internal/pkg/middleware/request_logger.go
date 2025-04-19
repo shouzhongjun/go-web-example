@@ -15,11 +15,7 @@ import (
 // RequestParamLogger 请求参数日志中间件
 // 打印路由，请求方式、请求参数
 func RequestParamLogger(logger *zap.Logger, config *configs.AllConfig) gin.HandlerFunc {
-	if config == nil || &config.Log.PrintParam == nil {
-		return func(c *gin.Context) {
-			c.Next()
-		}
-	} else if !config.Log.PrintParam {
+	if config == nil || !config.Log.PrintParam {
 		return func(c *gin.Context) {
 			c.Next()
 		}
@@ -38,7 +34,7 @@ func RequestParamLogger(logger *zap.Logger, config *configs.AllConfig) gin.Handl
 		// 处理不同类型的请求参数
 		if c.Request.Method != http.MethodGet {
 			// 对于非GET请求，尝试读取请求体
-			if c.Request.Body != nil && !(contentType != "" && (contentType == "multipart/form-data" || strings.Contains(contentType, "multipart/form-data"))) {
+			if c.Request.Body != nil && (contentType == "" || (contentType != "multipart/form-data" && !strings.Contains(contentType, "multipart/form-data"))) {
 				bodyBytes, _ := io.ReadAll(c.Request.Body)
 				// 重新设置请求体，因为读取后会消耗
 				c.Request.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))

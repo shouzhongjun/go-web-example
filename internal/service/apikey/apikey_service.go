@@ -133,6 +133,10 @@ func (s *APIKeyService) VerifySign(apiKey, sign, timestamp string) error {
 
 	// 验证时间戳是否在有效期内（例如5分钟）
 	ts, err := strconv.ParseInt(timestamp, 10, 64)
+	if err != nil {
+		s.logger.Error("时间戳解析失败", zap.String("timestamp", timestamp), zap.Error(err))
+		return errors.New("时间戳解析失败")
+	}
 
 	// 检查时间戳是否在有效期内（5分钟）
 	now := time.Now().Unix()

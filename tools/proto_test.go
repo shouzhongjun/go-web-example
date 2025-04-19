@@ -26,7 +26,6 @@ func TestGenerateLoginRequestData(t *testing.T) {
 
 	// 转换为 base64
 	base64Data := base64.StdEncoding.EncodeToString(data)
-	fmt.Printf("Base64 encoded request data:\n%s\n", base64Data)
 
 	// 解码并验证
 	decodedData, err := base64.StdEncoding.DecodeString(base64Data)
@@ -40,7 +39,7 @@ func TestGenerateLoginRequestData(t *testing.T) {
 	}
 
 	if decodedReq.Username != req.Username || decodedReq.Password != req.Password {
-		t.Errorf("Decoded data does not match original: got %v, want %v", decodedReq, req)
+		t.Errorf("Decoded data does not match original: got %v, want %v", decodedReq.String(), req)
 	}
 }
 

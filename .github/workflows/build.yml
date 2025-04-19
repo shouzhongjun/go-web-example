@@ -3,6 +3,7 @@ name: Build and Package
 on:
   push:
     branches: [ main, master,dev,release,develop,test ]
+    tags: [ 'v*' ]  # 添加这一行，确保推送标签时触发
   pull_request:
     branches: [ main, master,dev,release,develop,test ]
   release:
@@ -60,7 +61,7 @@ jobs:
             build/my-app-*
             dist/*.tar.gz
 
-  # Create GitHub Release with artifacts when a tag is pushed
+  # 修改 release 部分
   release:
     name: Create Release
     needs: build
@@ -68,11 +69,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Download artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4  # 更新到 v4 版本
         with:
           name: binaries
           path: artifacts
-
+          
+      - name: List artifacts for debugging
+        run: ls -la artifacts/
+          
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:

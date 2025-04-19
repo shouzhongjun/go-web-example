@@ -4,7 +4,9 @@ import (
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
 	"goWebExample/internal/repository/apikey"
+	"strconv"
 	"time"
 
 	"go.uber.org/zap"
@@ -124,6 +126,20 @@ func (s *APIKeyService) GetAll() ([]APIKeyDTO, error) {
 
 // VerifySign 验证签名
 func (s *APIKeyService) VerifySign(apiKey, sign, timestamp string) (bool, error) {
+	if apiKey == "" || sign == "" || timestamp == "" {
+
+		return false, errors.New("参数不能为空")
+	}
+
+	// 验证时间戳是否在有效期内（例如5分钟）
+	ts, err := strconv.ParseInt(timestamp, 10, 64)
+
+	// 检查时间戳是否在有效期内（5分钟）
+	now := time.Now().Unix()
+	if now-ts > 300 || ts-now > 300 {
+		s.logger.Error("时间戳过期", zap.Int64("timestamp", ts), zap.Int64("now", now))
+		return false, errors.New("时间戳过期")
+	}
 	s.logger.Info("验证签名", zap.String("apiKey", apiKey), zap.String("timestamp", timestamp))
 
 	// 获取API密钥信息

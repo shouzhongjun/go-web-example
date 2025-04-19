@@ -61,7 +61,7 @@ func NewApp(
 	handlerRegistry *handlers.Registry,
 ) *App {
 	// 初始化链路追踪
-	tp, err := initTracer(config, logger)
+	tp, err := tracer.InitTracer(config, logger)
 	if err != nil {
 		log.Fatalf("初始化链路追踪失败: %v", err)
 	}
@@ -74,6 +74,14 @@ func NewApp(
 
 	// 初始化全局路由组
 	server.InitGroups(engine, logger, container)
+
+	// 为OpenAPI路由组应用认证中间件
+	if config.OpenAPI.Enable {
+		logger.Info("为OpenAPI路由组应用认证中间件")
+		server.GlobalGroups.OpenAPI.Use(middleware.OpenAPIAuthMiddleware(&config.OpenAPI, logger))
+	} else {
+		logger.Warn("OpenAPI未启用，跳过认证中间件")
+	}
 
 	// 注册所有处理器的路由
 	for _, h := range handlerRegistry.GetHandlers() {
@@ -88,6 +96,8 @@ func NewApp(
 			h.RegisterRoutes(server.GlobalGroups.V1)
 		case handlers.DataCenter:
 			h.RegisterRoutes(server.GlobalGroups.DataCenter)
+		case handlers.OpenAPI:
+			h.RegisterRoutes(server.GlobalGroups.OpenAPI)
 		default:
 			h.RegisterRoutes(server.GlobalGroups.API)
 		}
@@ -116,17 +126,6 @@ func NewApp(
 	return app
 }
 
-// initTracer 初始化链路追踪
-func initTracer(config *configs.AllConfig, logger *zap.Logger) (*trace.TracerProvider, error) {
-	return tracer.InitTracer(&tracer.Config{
-		ServiceName:    config.Trace.ServiceName,
-		ServiceVersion: config.Trace.ServiceVersion,
-		Environment:    config.Trace.Environment,
-		Endpoint:       config.Trace.Endpoint,
-		SamplingRatio:  config.Trace.SamplingRatio,
-	}, logger)
-}
-
 // Run 运行应用程序
 func (app *App) Run() error {
 	// 运行 HTTP 服务器（包含信号处理和优雅关闭）
@@ -140,7 +139,8 @@ func (app *App) Run() error {
 // Shutdown 优雅关闭应用程序
 func (app *App) Shutdown(ctx context.Context) error {
 	// 关闭链路追踪
-	if err := tracer.Shutdown(ctx, app.tp, app.logger); err != nil {
+	cfg := tracer.DefaultShutdownConfig(app.tp, app.logger)
+	if err := tracer.Shutdown(ctx, cfg); err != nil {
 		app.logger.Error("关闭链路追踪失败", zap.Error(err))
 	}
 

@@ -20,29 +20,37 @@ func init() {
 
 // AllConfig 应用全局配置
 type AllConfig struct {
-	Model       string       `yaml:"model"`
-	Server      Server       `yaml:"server"`
-	Log         Log          `yaml:"log"`
-	Cors        *Cors        `yaml:"cors"`
-	Trace       *Trace       `yaml:"trace"`
-	Database    Database     `yaml:"database"`
-	Redis       Redis        `yaml:"redis"`
-	Kafka       KafkaConfig  `yaml:"kafka"`
-	Etcd        *Etcd        `yaml:"etcd"`
-	MongoDB     *MongoDB     `yaml:"mongodb"`
-	JWT         JWTConfig    `yaml:"jwt"`
-	Swagger     Swagger      `yaml:"swagger"`
-	RateLimiter *RateLimiter `yaml:"rateLimiter"`
+	Model       string        `yaml:"model"`
+	Server      Server        `yaml:"server"`
+	Log         Log           `yaml:"log"`
+	Cors        *Cors         `yaml:"cors"`
+	Trace       *Trace        `yaml:"trace"`
+	Database    Database      `yaml:"database"`
+	Redis       Redis         `yaml:"redis"`
+	Kafka       KafkaConfig   `yaml:"kafka"`
+	Etcd        *Etcd         `yaml:"etcd"`
+	MongoDB     *MongoDB      `yaml:"mongodb"`
+	JWT         JWTConfig     `yaml:"jwt"`
+	Swagger     Swagger       `yaml:"swagger"`
+	RateLimiter *RateLimiter  `yaml:"rateLimiter"`
+	OpenAPI     OpenAPIConfig `yaml:"openapi"`
 }
 
 // Trace 链路追踪配置
 type Trace struct {
-	ServiceName    string  `yaml:"serviceName"`    // 服务名称
-	ServiceVersion string  `yaml:"serviceVersion"` // 服务版本
-	Environment    string  `yaml:"environment"`    // 环境（dev/prod等）
-	Endpoint       string  `yaml:"endpoint"`       // 链路追踪服务器地址
-	SamplingRatio  float64 `yaml:"samplingRatio"`  // 采样率
-	Enable         bool    `yaml:"enable"`         // 是否启用链路追踪
+	ServiceName    string        `yaml:"serviceName"`    // 服务名称
+	ServiceVersion string        `yaml:"serviceVersion"` // 服务版本
+	Environment    string        `yaml:"environment"`    // 环境（dev/prod等）
+	Endpoint       string        `yaml:"endpoint"`       // 链路追踪服务器地址
+	SamplingRatio  float64       `yaml:"samplingRatio"`  // 采样率
+	Enable         bool          `yaml:"enable"`         // 是否启用链路追踪
+	BatchTimeout   time.Duration `yaml:"batchTimeout"`   // 批处理超时时间
+	MaxBatchSize   int           `yaml:"maxBatchSize"`   // 最大批处理大小
+	MaxQueueSize   int           `yaml:"maxQueueSize"`   // 最大队列大小
+	ClientTimeout  time.Duration `yaml:"clientTimeout"`  // 客户端超时时间
+	RetryInitial   time.Duration `yaml:"retryInitial"`   // 重试初始间隔
+	RetryMax       time.Duration `yaml:"retryMax"`       // 最大重试间隔
+	RetryElapsed   time.Duration `yaml:"retryElapsed"`   // 重试总时长
 }
 
 // Log 日志配置
@@ -240,4 +248,65 @@ type RateLimiter struct {
 	Local    Local  `yaml:"local"`
 	Rate     int    `yaml:"rate"`
 	Strategy string `yaml:"strategy"`
+}
+
+// OpenAPIConfig OpenAPI配置
+type OpenAPIConfig struct {
+	Enable bool `yaml:"enable"` // 是否启用OpenAPI
+}
+
+// GetBatchTimeout 获取批处理超时时间，如果未配置则返回默认值
+func (t *Trace) GetBatchTimeout() time.Duration {
+	if t.BatchTimeout <= 0 {
+		return 5 * time.Second
+	}
+	return t.BatchTimeout
+}
+
+// GetMaxBatchSize 获取最大批处理大小，如果未配置则返回默认值
+func (t *Trace) GetMaxBatchSize() int {
+	if t.MaxBatchSize <= 0 {
+		return 100
+	}
+	return t.MaxBatchSize
+}
+
+// GetMaxQueueSize 获取最大队列大小，如果未配置则返回默认值
+func (t *Trace) GetMaxQueueSize() int {
+	if t.MaxQueueSize <= 0 {
+		return 1000
+	}
+	return t.MaxQueueSize
+}
+
+// GetClientTimeout 获取客户端超时时间，如果未配置则返回默认值
+func (t *Trace) GetClientTimeout() time.Duration {
+	if t.ClientTimeout <= 0 {
+		return 5 * time.Second
+	}
+	return t.ClientTimeout
+}
+
+// GetRetryInitial 获取重试初始间隔，如果未配置则返回默认值
+func (t *Trace) GetRetryInitial() time.Duration {
+	if t.RetryInitial <= 0 {
+		return time.Second
+	}
+	return t.RetryInitial
+}
+
+// GetRetryMax 获取最大重试间隔，如果未配置则返回默认值
+func (t *Trace) GetRetryMax() time.Duration {
+	if t.RetryMax <= 0 {
+		return 5 * time.Second
+	}
+	return t.RetryMax
+}
+
+// GetRetryElapsed 获取重试总时长，如果未配置则返回默认值
+func (t *Trace) GetRetryElapsed() time.Duration {
+	if t.RetryElapsed <= 0 {
+		return 30 * time.Second
+	}
+	return t.RetryElapsed
 }

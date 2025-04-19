@@ -14,27 +14,35 @@ log:
   prefix: go-server-rest-api
   enableConsole: true
   enableFile: true
-  level: info
+  level: debug
   path: ./logs
 
 cors:
   enable: true
-  allowedOrigins: ["*"]
-  allowedMethods: ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"]
-  allowedHeaders: ["*"]
-  exposeHeaders: ["Content-Length"]
+  allowedOrigins: [ "*" ]
+  allowedMethods: [ "GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS" ]
+  allowedHeaders: [ "*" ]
+  exposeHeaders: [ "Content-Length" ]
   allowCredentials: false
   maxAge: 43200
   allowPrivateNetwork: true
 
 
 trace:
-  serviceName: "goWebExample"
-  serviceVersion: "1.0.0"
-  environment: "dev"
-  endpoint: "localhost:4318"  # Jaeger OTLP HTTP 端点
-  samplingRatio: 1.0
-  enable: true
+  serviceName: "your-service-name"          # 服务名称
+  serviceVersion: "v1.0.0"                  # 服务版本
+  environment: "dev"                        # 环境（如 dev、prod）
+  endpoint: "http://localhost:4317"         # 链路追踪服务器地址
+  samplingRatio: 1.0                        # 采样率，1.0 表示全采样
+  enable: true                              # 是否启用链路追踪
+  batchTimeout: "5s"                        # 批处理超时时间（支持如 5s、1m）
+  maxBatchSize: 512                         # 最大批处理大小
+  maxQueueSize: 2048                        # 最大队列大小
+  clientTimeout: "3s"                       # 客户端超时时间
+  retryInitial: "500ms"                     # 重试初始间隔
+  retryMax: "5s"                            # 最大重试间隔
+  retryElapsed: "30s"                       # 重试总时长
+
 
 database:
   host: localhost
@@ -51,7 +59,7 @@ database:
   connMaxIdleTime: 2
 
 jwt:
-  secretKey:  "secretKey"  # 在生产环境中应该使用更安全的密钥
+  secretKey: "secretKey"  # 在生产环境中应该使用更安全的密钥
   issuer: "goWebExample"
   duration: 24h
 
@@ -107,4 +115,6 @@ rateLimiter:
     maxWaitCountPerYear: 100
     maxWaitCountPerDecade: 100
 
-
+# OpenAPI配置
+openapi:
+  enable: true

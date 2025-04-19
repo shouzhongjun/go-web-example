@@ -59,6 +59,20 @@ func (c *DBConnector) setDuration(value *int64, defaultDuration time.Duration, n
 
 // NewDBConnector 创建MySQL连接器
 func NewDBConnector(config *configs.Database, logger *zap.Logger) *DBConnector {
+	// 检查 logger 是否为 nil
+	if logger == nil {
+		return nil
+	}
+
+	// 检查 config 是否为 nil
+	if config == nil {
+		// 可以选择返回 nil 或者使用默认配置
+		return &DBConnector{
+			Connector: *connector.NewConnector("mysql", logger),
+			config:    nil, // 或者使用默认配置
+		}
+	}
+
 	return &DBConnector{
 		Connector: *connector.NewConnector("mysql", logger),
 		config:    config,
@@ -69,6 +83,10 @@ func NewDBConnector(config *configs.Database, logger *zap.Logger) *DBConnector {
 func (c *DBConnector) Connect(ctx context.Context) error {
 	if c.IsConnected() {
 		return nil
+	}
+	// 检查 config 是否为 nil
+	if c.config == nil {
+		return fmt.Errorf("配置为空，无法连接数据库")
 	}
 
 	c.Logger().Info("正在连接MySQL数据库",

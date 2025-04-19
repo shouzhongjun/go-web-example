@@ -80,7 +80,7 @@ type Database struct {
 	MaxOpenConns    int    `yaml:"maxOpen_conns"`
 	ConnMaxLifetime *int64 `yaml:"connMaxLifetime"`
 	Host            string `yaml:"host"`
-	User            string `yaml:"user"`
+	UserName        string `yaml:"username"`
 	Password        string `yaml:"password"`
 	Port            int    `yaml:"port"`
 	DBName          string `yaml:"dbname"`
@@ -94,10 +94,10 @@ type Database struct {
 func (db *Database) DSN() string {
 	// mysql dsn
 	return fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8mb4&parseTime=True&loc=Local",
-		db.User, db.Password, db.Host, db.Port, db.DBName)
+		db.UserName, db.Password, db.Host, db.Port, db.DBName)
 
 	//return fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%d sslmode=%s",
-	//	db.Host, db.User, db.Password, db.DBName, db.Port, db.SSLMode)
+	//	db.Host, db.UserName, db.Password, db.DBName, db.Port, db.SSLMode)
 }
 
 // Redis 缓存配置

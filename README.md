@@ -221,7 +221,7 @@ git push origin v1.0.0
 
 ### 下载构建产物
 
-每次工作流运行后，构建产物会被上传并保存在 GitHub Actions 中。您可以通过以下步骤下载这些构建产物：
+每次工作流运行后，构建产物会通过 actions/upload-artifact@v3 被上传并保存在 GitHub Actions 中。您可以通过以下步骤下载这些构建产物：
 
 1. 访问您的 GitHub 仓库
 2. 点击 "Actions" 标签页

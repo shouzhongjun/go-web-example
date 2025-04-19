@@ -11,21 +11,22 @@ on:
 
 jobs:
   build:
-    name: Build and Test
+    name: Build and Release
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout code
+      - name: Checkout code 🧾
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
 
-      - name: Set up Go
+      - name: Set up Go 🐹
         uses: actions/setup-go@v4
         with:
-          go-version: '1.23.7'
+          go-version: '1.22.x'  # ✅ 推荐使用稳定版
           cache: true
 
-      - name: Install dependencies
+      - name: Install dependencies 📦
         run: make deps
 
       - name: Install Wire
@@ -34,19 +35,18 @@ jobs:
       - name: Generate Wire
         run: make wire
 
-      - name: Generate Swagger docs
+      - name: Generate Swagger docs 📚
         run: |
           go install github.com/swaggo/swag/cmd/swag@latest
           make swagger
 
-      - name: Build all platforms
+      - name: Build all platforms 🛠️
         run: make build-all
 
-      - name: Create distribution packages
+      - name: Create distribution packages 📦
         run: make dist
 
-      # 添加调试步骤
-      - name: Show build directories
+      - name: Show build directories (debug) 🪵
         run: |
           mkdir -p build dist
           find . -name "my-app-*" -type f
@@ -54,41 +54,17 @@ jobs:
           ls -la build/ || echo "build directory is empty or not found"
           ls -la dist/ || echo "dist directory is empty or not found"
 
-      - name: Create Release and Upload Release Asset
-        uses: softprops/action-gh-release@v1
+      - name: Create GitHub Release and Upload Assets 🚀
         if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v1
         with:
-          tag_name: ${{ github.ref }}
-          name: Release ${{ github.ref }}
-          body: TODO New Release.
+          tag_name: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
+          body: |
+            🎉 **New Release ${{ github.ref_name }}**
+            - 自动构建并打包所有平台版本
+            - 包含 Swagger 文档、Wire 依赖注入文件等
           draft: false
           prerelease: false
           files: |
             dist/my-app-*.tar.gz
-#            build/my-app-*
-
-  release:
-    name: Create Release
-    needs: build
-    if: startsWith(github.ref, 'refs/tags/')
-    runs-on: ubuntu-latest
-    steps:
-      - name: Download artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: binaries
-          path: artifacts
-
-      - name: List artifacts for debugging
-        run: |
-          ls -la artifacts/ || echo "artifacts directory is empty"
-          find artifacts -type f
-
-      - name: Create Release
-        uses: softprops/action-gh-release@v1
-        with:
-          files: |
-            artifacts/**/*.tar.gz
-            artifacts/**/my-app-*
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -2,10 +2,10 @@ name: Build and Package
 
 on:
   push:
-    branches: [ main, master,dev,release,develop,test ]
-    tags: [ 'v*' ]  # 添加这一行，确保推送标签时触发
+    branches: [ main, master, dev, release, develop, test ]
+    tags: [ 'v*' ]
   pull_request:
-    branches: [ main, master,dev,release,develop,test ]
+    branches: [ main, master, dev, release, develop, test ]
   release:
     types: [ created ]
 
@@ -37,10 +37,10 @@ jobs:
 #      - name: Run tests
 #        run: make test
 
-#      - name: Run linter
-#        run: |
-#          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin
-#          make lint
+      - name: Run linter
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin
+          make lint
 
       - name: Generate Swagger docs
         run: |
@@ -53,15 +53,21 @@ jobs:
       - name: Create distribution packages
         run: make dist
 
+      # 调试构建目录
+      - name: Debug directories
+        run: |
+          ls -la
+          ls -la build/ || echo "build directory not found"
+          ls -la dist/ || echo "dist directory not found"
+
       - name: Upload artifacts
-        uses:  actions/upload-artifact@v4
+        uses: actions/upload-artifact@v4
         with:
           name: binaries
           path: |
-            build/my-app-*
-            dist/*.tar.gz
+            build/
+            dist/
 
-  # 修改 release 部分
   release:
     name: Create Release
     needs: build
@@ -69,19 +75,22 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Download artifacts
-        uses: actions/download-artifact@v4  # 更新到 v4 版本
+        uses: actions/download-artifact@v4
         with:
           name: binaries
           path: artifacts
           
       - name: List artifacts for debugging
-        run: ls -la artifacts/
+        run: |
+          ls -la artifacts/
+          ls -la artifacts/build/ || echo "build directory not found"
+          ls -la artifacts/dist/ || echo "dist directory not found"
           
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            artifacts/*.tar.gz
-            artifacts/my-app-*
+            artifacts/dist/*.tar.gz
+            artifacts/build/my-app-*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

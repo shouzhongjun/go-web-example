@@ -60,6 +60,7 @@ type Log struct {
 	EnableConsole bool   `yaml:"enableConsole"`
 	Prefix        string `yaml:"prefix"`
 	Path          string `yaml:"path"`
+	PrintParam    bool   `yaml:"printParam"`
 }
 
 type Cors struct {

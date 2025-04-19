@@ -16,6 +16,7 @@ log:
   enableFile: true
   level: debug
   path: ./logs
+  printParam: true
 
 cors:
   enable: true

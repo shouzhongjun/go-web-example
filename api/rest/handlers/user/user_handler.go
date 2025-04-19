@@ -2,7 +2,7 @@ package user
 
 import (
 	"goWebExample/api/rest/handlers/user/request"
-	"goWebExample/internal/middleware"
+	"goWebExample/internal/pkg/middleware"
 	"net/http"
 
 	"github.com/gin-gonic/gin"

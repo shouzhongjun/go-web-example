@@ -11,8 +11,8 @@ import (
 	_ "goWebExample/api/rest/handlers" // 导入所有 handlers
 	"goWebExample/internal/configs"
 	"goWebExample/internal/infra/di/container"
-	"goWebExample/internal/middleware"
 	"goWebExample/internal/pkg/handlers"
+	"goWebExample/internal/pkg/middleware"
 	"goWebExample/internal/pkg/module"
 	"goWebExample/internal/pkg/server"
 	"goWebExample/internal/pkg/tracer"

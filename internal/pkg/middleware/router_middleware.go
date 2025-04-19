@@ -38,8 +38,8 @@ func LoadMiddleware(config *configs.AllConfig, logger *zap.Logger, engine *gin.E
 	// 添加链路追踪中间件
 	engine.Use(otelgin.Middleware(config.Trace.ServiceName))
 
-	// 日志中间件
-	engine.Use(GinLogger(logger))
+	// 请求参数日志中间件
+	engine.Use(RequestParamLogger(logger, config))
 
 	// Gzip压缩
 	engine.Use(gzip.Gzip(gzip.DefaultCompression))
@@ -88,30 +88,5 @@ func setupValidator(logger *zap.Logger) {
 				logger.Error("注册验证规则失败", zap.String("rule", tag), zap.Error(err))
 			}
 		}
-	}
-}
-
-// GinLogger 接收一个zap.Logger并返回一个gin.HandlerFunc
-func GinLogger(logger *zap.Logger) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		start := time.Now()
-		path := c.Request.URL.Path
-		query := c.Request.URL.RawQuery
-		requestID := c.GetString("X-Request-ID")
-
-		c.Next()
-
-		cost := time.Since(start)
-		logger.Info("请求日志",
-			zap.String("requestID", requestID),
-			zap.Int("状态", c.Writer.Status()),
-			zap.String("方法", c.Request.Method),
-			zap.String("路径", path),
-			zap.String("查询", query),
-			zap.String("IP", c.ClientIP()),
-			zap.String("用户代理", c.Request.UserAgent()),
-			zap.String("错误", c.Errors.ByType(gin.ErrorTypePrivate).String()),
-			zap.Duration("耗时", cost),
-		)
 	}
 }

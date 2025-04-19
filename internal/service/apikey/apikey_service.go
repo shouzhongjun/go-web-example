@@ -32,7 +32,7 @@ type ServiceAPIKey interface {
 	Update(apiKey *apikey.APIKey) error
 	Delete(id uint64) error
 	GetAll() ([]APIKeyDTO, error)
-	VerifySign(apiKey, sign, timestamp string) (bool, error)
+	VerifySign(apiKey, sign, timestamp string) error
 }
 
 // APIKeyService 提供API密钥业务服务
@@ -125,10 +125,10 @@ func (s *APIKeyService) GetAll() ([]APIKeyDTO, error) {
 }
 
 // VerifySign 验证签名
-func (s *APIKeyService) VerifySign(apiKey, sign, timestamp string) (bool, error) {
+func (s *APIKeyService) VerifySign(apiKey, sign, timestamp string) error {
 	if apiKey == "" || sign == "" || timestamp == "" {
 
-		return false, errors.New("参数不能为空")
+		return errors.New("参数不能为空")
 	}
 
 	// 验证时间戳是否在有效期内（例如5分钟）
@@ -138,7 +138,7 @@ func (s *APIKeyService) VerifySign(apiKey, sign, timestamp string) (bool, error)
 	now := time.Now().Unix()
 	if now-ts > 300 || ts-now > 300 {
 		s.logger.Error("时间戳过期", zap.Int64("timestamp", ts), zap.Int64("now", now))
-		return false, errors.New("时间戳过期")
+		return errors.New("时间戳过期")
 	}
 	s.logger.Info("验证签名", zap.String("apiKey", apiKey), zap.String("timestamp", timestamp))
 
@@ -146,7 +146,7 @@ func (s *APIKeyService) VerifySign(apiKey, sign, timestamp string) (bool, error)
 	apiKeyInfo, err := s.repo.GetByAPIKey(apiKey)
 	if err != nil {
 		s.logger.Error("获取API密钥失败", zap.String("apiKey", apiKey), zap.Error(err))
-		return false, err
+		return err
 	}
 
 	// 生成预期的签名
@@ -154,13 +154,13 @@ func (s *APIKeyService) VerifySign(apiKey, sign, timestamp string) (bool, error)
 
 	// 比较签名
 	if sign != expectedSign {
-		s.logger.Warn("签名验证失败",
+		s.logger.Error("签名验证失败",
 			zap.String("provided", sign),
 			zap.String("expected", expectedSign))
-		return false, nil
+		return errors.New("签名验证失败")
 	}
 
-	return true, nil
+	return nil
 }
 
 // generateSign 生成签名

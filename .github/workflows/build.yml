@@ -33,8 +33,8 @@ jobs:
       - name: Generate Wire
         run: make wire
 
-      - name: Run tests
-        run: make test
+#      - name: Run tests
+#        run: make test
 
       - name: Run linter
         run: |

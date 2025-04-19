@@ -3,6 +3,7 @@ package mysql
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -18,11 +19,42 @@ import (
 	gormLogger "goWebExample/pkg/logger/gorm"
 )
 
+// 定义常见错误
+var (
+	ErrNotConnected = errors.New("MySQL未连接")
+	ErrGetSQLDB     = errors.New("获取SQL.DB失败")
+)
+
 // DBConnector MySQL数据库连接器
 type DBConnector struct {
 	connector.Connector
 	config *configs.Database
 	db     *gorm.DB
+}
+
+// checkConnection 检查数据库连接状态并返回SQL DB
+func (c *DBConnector) checkConnection() (*sql.DB, error) {
+	if !c.IsConnected() || c.db == nil {
+		return nil, ErrNotConnected
+	}
+
+	sqlDB, err := c.db.DB()
+	if err != nil {
+		return nil, fmt.Errorf("%w: %v", ErrGetSQLDB, err)
+	}
+	return sqlDB, nil
+}
+
+// setDuration 设置时间相关配置，返回配置的时间值
+func (c *DBConnector) setDuration(value *int64, defaultDuration time.Duration, name string) time.Duration {
+	var duration time.Duration
+	if value == nil {
+		duration = defaultDuration
+		c.Logger().Info("未设置"+name+"，使用默认值", zap.Duration("默认值", duration))
+	} else {
+		duration = time.Duration(*value) * time.Second
+	}
+	return duration
 }
 
 // NewDBConnector 创建MySQL连接器
@@ -74,24 +106,11 @@ func (c *DBConnector) Connect(ctx context.Context) error {
 	sqlDB.SetMaxOpenConns(c.config.MaxOpenConns)
 	sqlDB.SetMaxIdleConns(c.config.MaxIdleConns)
 
-	// 设置连接最大生命周期
-	var connMaxLifetime time.Duration
-	if c.config.ConnMaxLifetime == nil {
-		connMaxLifetime = time.Hour
-		c.Logger().Info("未设置连接最大生命周期，使用默认值", zap.Duration("默认值", connMaxLifetime))
-	} else {
-		connMaxLifetime = time.Duration(*c.config.ConnMaxLifetime) * time.Second
-	}
-	sqlDB.SetConnMaxLifetime(connMaxLifetime)
+	// 设置连接最大生命周期和最大空闲时间
+	connMaxLifetime := c.setDuration(c.config.ConnMaxLifetime, time.Hour, "连接最大生命周期")
+	connMaxIdleTime := c.setDuration(c.config.ConnMaxIdleTime, time.Hour, "连接最大空闲时间")
 
-	// 设置连接最大空闲时间
-	var connMaxIdleTime time.Duration
-	if c.config.ConnMaxIdleTime == nil {
-		connMaxIdleTime = time.Hour
-		c.Logger().Info("未设置连接最大空闲时间，使用默认值", zap.Duration("默认值", connMaxIdleTime))
-	} else {
-		connMaxIdleTime = time.Duration(*c.config.ConnMaxIdleTime) * time.Second
-	}
+	sqlDB.SetConnMaxLifetime(connMaxLifetime)
 	sqlDB.SetConnMaxIdleTime(connMaxIdleTime)
 
 	c.db = db
@@ -111,9 +130,9 @@ func (c *DBConnector) Disconnect(ctx context.Context) error {
 		return nil
 	}
 
-	sqlDB, err := c.db.DB()
+	sqlDB, err := c.checkConnection()
 	if err != nil {
-		return fmt.Errorf("获取SQL.DB失败: %w", err)
+		return err
 	}
 
 	if err := sqlDB.Close(); err != nil {
@@ -139,13 +158,9 @@ func (c *DBConnector) GetDBWithContext(ctx context.Context) *gorm.DB {
 
 // HealthCheck 健康检查
 func (c *DBConnector) HealthCheck(ctx context.Context) (bool, error) {
-	if !c.IsConnected() || c.db == nil {
-		return false, fmt.Errorf("MySQL未连接")
-	}
-
-	sqlDB, err := c.db.DB()
+	sqlDB, err := c.checkConnection()
 	if err != nil {
-		return false, fmt.Errorf("获取SQL.DB失败: %w", err)
+		return false, err
 	}
 
 	// 使用带超时的上下文进行健康检查
@@ -158,13 +173,9 @@ func (c *DBConnector) HealthCheck(ctx context.Context) (bool, error) {
 
 // Stats 获取数据库连接池统计信息
 func (c *DBConnector) Stats(ctx context.Context) (*sql.DBStats, error) {
-	if !c.IsConnected() || c.db == nil {
-		return nil, fmt.Errorf("MySQL未连接")
-	}
-
-	sqlDB, err := c.db.DB()
+	sqlDB, err := c.checkConnection()
 	if err != nil {
-		return nil, fmt.Errorf("获取SQL.DB失败: %w", err)
+		return nil, err
 	}
 
 	stats := sqlDB.Stats()
@@ -173,8 +184,9 @@ func (c *DBConnector) Stats(ctx context.Context) (*sql.DBStats, error) {
 
 // Transaction 执行事务
 func (c *DBConnector) Transaction(ctx context.Context, fn func(tx *gorm.DB) error, opts ...*sql.TxOptions) error {
-	if !c.IsConnected() || c.db == nil {
-		return fmt.Errorf("MySQL未连接")
+	_, err := c.checkConnection()
+	if err != nil {
+		return err
 	}
 
 	return c.db.WithContext(ctx).Transaction(fn, opts...)
@@ -182,12 +194,24 @@ func (c *DBConnector) Transaction(ctx context.Context, fn func(tx *gorm.DB) erro
 
 // maskDSN 对DSN中的敏感信息进行掩码处理
 func maskDSN(dsn string) string {
-	parts := strings.Split(dsn, ":")
-	if len(parts) > 1 {
-		passwordParts := strings.Split(parts[1], "@")
-		if len(passwordParts) > 0 {
-			return parts[0] + ":******@" + strings.Join(passwordParts[1:], "@")
-		}
+	if dsn == "" {
+		return ""
 	}
-	return "******"
+
+	// 尝试解析标准格式的DSN: username:password@protocol(address)/dbname
+	userPwdSplit := strings.SplitN(dsn, ":", 2)
+	if len(userPwdSplit) < 2 {
+		// 没有找到用户名密码分隔符，返回掩码
+		return "******"
+	}
+
+	username := userPwdSplit[0]
+	restParts := strings.SplitN(userPwdSplit[1], "@", 2)
+	if len(restParts) < 2 {
+		// 没有找到密码和主机分隔符，返回掩码
+		return username + ":******"
+	}
+
+	// 返回掩码后的DSN
+	return username + ":******@" + restParts[1]
 }

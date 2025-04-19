@@ -142,8 +142,9 @@ func (app *App) Shutdown(ctx context.Context) error {
 	cfg := tracer.DefaultShutdownConfig(app.tp, app.logger)
 	if err := tracer.Shutdown(ctx, cfg); err != nil {
 		app.logger.Error("关闭链路追踪失败", zap.Error(err))
+		return err
 	}
 
-	// 关闭 HTTP 服务器（包含其他服务的关闭）
-	return app.httpServer.Shutdown(ctx)
+	// 注意：HTTP 服务器的关闭由 HTTPServer.Shutdown 处理
+	return nil
 }

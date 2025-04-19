@@ -115,13 +115,11 @@ func Shutdown(ctx context.Context, cfg *ShutdownConfig) error {
 	if cfg == nil {
 		return errors.New("关闭配置不能为空")
 	}
-
 	if cfg.Provider == nil {
 		return nil
 	}
-
 	cfg.Logger.Info("正在关闭追踪器")
-
+	defer cfg.Logger.Info("追踪器已关闭")
 	shutdownCtx, cancel := context.WithTimeout(ctx, cfg.Timeout)
 	defer cancel()
 

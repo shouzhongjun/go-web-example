@@ -20,7 +20,7 @@
         "version": "1.0"
     },
     "host": "localhost:8080",
-    "basePath": "/api",
+    "basePath": "/ma",
     "paths": {
         "/data": {
             "get": {

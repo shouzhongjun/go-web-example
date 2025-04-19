@@ -565,7 +565,7 @@ const docTemplate = `{
 var SwaggerInfo = &swag.Spec{
 	Version:          "1.0",
 	Host:             "localhost:8080",
-	BasePath:         "/api",
+	BasePath:         "/ma",
 	Schemes:          []string{"http", "https"},
 	Title:            "GoWebExample API",
 	Description:      "This is a sample server for GoWebExample.",

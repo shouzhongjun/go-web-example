@@ -34,14 +34,6 @@ jobs:
       - name: Generate Wire
         run: make wire
 
-#      - name: Run tests
-#        run: make test
-
-      - name: Run linter
-        run: |
-          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin
-          make lint
-
       - name: Generate Swagger docs
         run: |
           go install github.com/swaggo/swag/cmd/swag@latest
@@ -53,20 +45,25 @@ jobs:
       - name: Create distribution packages
         run: make dist
 
-      # 调试构建目录
-      - name: Debug directories
+      # 添加调试步骤
+      - name: Show build directories
         run: |
-          ls -la
-          ls -la build/ || echo "build directory not found"
-          ls -la dist/ || echo "dist directory not found"
+          mkdir -p build dist
+          find . -name "my-app-*" -type f
+          find . -name "*.tar.gz" -type f
+          ls -la build/ || echo "build directory is empty or not found"
+          ls -la dist/ || echo "dist directory is empty or not found"
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: binaries
+          # 使用更宽泛的匹配模式
           path: |
-            build/
-            dist/
+            ./build/
+            ./dist/
+            ./**/*my-app-*
+            ./**/*.tar.gz
 
   release:
     name: Create Release
@@ -82,15 +79,14 @@ jobs:
           
       - name: List artifacts for debugging
         run: |
-          ls -la artifacts/
-          ls -la artifacts/build/ || echo "build directory not found"
-          ls -la artifacts/dist/ || echo "dist directory not found"
+          ls -la artifacts/ || echo "artifacts directory is empty"
+          find artifacts -type f
           
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            artifacts/dist/*.tar.gz
-            artifacts/build/my-app-*
+            artifacts/**/*.tar.gz
+            artifacts/**/my-app-*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

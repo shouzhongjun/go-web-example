@@ -82,10 +82,24 @@ func validateChineseID(value string) bool {
 	return matched
 }
 
+// 预编译正则表达式
+var (
+	lowerCaseRegex    = regexp.MustCompile(`[a-z]`)
+	upperCaseRegex    = regexp.MustCompile(`[A-Z]`)
+	digitRegex        = regexp.MustCompile(`\d`)
+	alphaNumericRegex = regexp.MustCompile(`^[a-zA-Z\d]+$`)
+)
+
 // validatePassword 验证密码强度
 func validatePassword(value string) bool {
-	// 至少8位，包含大小写字母和数字
-	pattern := `^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d]{8,}$`
-	matched, _ := regexp.MatchString(pattern, value)
-	return matched
+	// 检查长度是否至少为8位
+	if len(value) < 8 {
+		return false
+	}
+
+	// 使用预编译的正则表达式进行检查
+	return lowerCaseRegex.MatchString(value) &&
+		upperCaseRegex.MatchString(value) &&
+		digitRegex.MatchString(value) &&
+		alphaNumericRegex.MatchString(value)
 }

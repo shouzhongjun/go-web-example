@@ -65,8 +65,8 @@ func (c *MongoDBConnector) Connect(ctx context.Context) error {
 	c.client = client
 	c.SetConnected(true)
 	c.Logger().Info("MongoDB连接成功",
-		zap.Uint64("最大连接数", clientOptions.MaxPoolSize.Value),
-		zap.Uint64("最小连接数", clientOptions.MinPoolSize.Value))
+		zap.Uint64("最大连接数", *clientOptions.MaxPoolSize),
+		zap.Uint64("最小连接数", *clientOptions.MinPoolSize))
 
 	return nil
 }

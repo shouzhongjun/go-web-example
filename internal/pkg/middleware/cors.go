@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -73,7 +74,7 @@ func Cors(config configs.Cors, logger *zap.Logger) gin.HandlerFunc {
 
 		// 设置预检请求缓存时间
 		if config.MaxAge > 0 {
-			c.Header("Access-Control-Max-Age", string(config.MaxAge))
+			c.Header("Access-Control-Max-Age", strconv.Itoa(config.MaxAge))
 		}
 
 		// 设置是否允许私有网络访问

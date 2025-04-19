@@ -1,0 +1,96 @@
+name: Build and Package
+
+on:
+  push:
+    branches: [ main, master, dev, release, develop, test ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ main, master, dev, release, develop, test ]
+  release:
+    types: [ created ]
+
+jobs:
+  build:
+    name: Build and Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.23.7'
+          cache: true
+
+      - name: Install dependencies
+        run: make deps
+
+      - name: Install Wire
+        run: go install github.com/google/wire/cmd/wire@latest
+
+      - name: Generate Wire
+        run: make wire
+
+#      - name: Run tests
+#        run: make test
+
+      - name: Run linter
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin
+          make lint
+
+      - name: Generate Swagger docs
+        run: |
+          go install github.com/swaggo/swag/cmd/swag@latest
+          make swagger
+
+      - name: Build all platforms
+        run: make build-all
+
+      - name: Create distribution packages
+        run: make dist
+
+      # 调试构建目录
+      - name: Debug directories
+        run: |
+          ls -la
+          ls -la build/ || echo "build directory not found"
+          ls -la dist/ || echo "dist directory not found"
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: binaries
+          path: |
+            build/
+            dist/
+
+  release:
+    name: Create Release
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: binaries
+          path: artifacts
+          
+      - name: List artifacts for debugging
+        run: |
+          ls -la artifacts/
+          ls -la artifacts/build/ || echo "build directory not found"
+          ls -la artifacts/dist/ || echo "dist directory not found"
+          
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            artifacts/dist/*.tar.gz
+            artifacts/build/my-app-*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

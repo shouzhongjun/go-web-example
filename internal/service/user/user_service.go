@@ -140,7 +140,7 @@ func (s *UserService) Login(username string, password string, ip string) (*AuthR
 		s.logger.Warn("密码错误", zap.String("username", username))
 		return nil, fmt.Errorf("用户不存在或密码错误")
 	}
-	if userInfo.LockoutEnd != nil && time.Now().Before(*userInfo.LockoutEnd) || userInfo.IsActive == false {
+	if userInfo.LockoutEnd != nil && time.Now().Before(*userInfo.LockoutEnd) || !userInfo.IsActive {
 		s.logger.Warn("用户被锁定", zap.String("username", username))
 		return nil, fmt.Errorf("用户被锁定")
 	}

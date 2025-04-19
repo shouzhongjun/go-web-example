@@ -19,6 +19,7 @@ type RouterGroups struct {
 	Public     *gin.RouterGroup // 公开路由组
 	V1         *gin.RouterGroup // API v1 版本路由组
 	DataCenter *gin.RouterGroup // 数据中心路由组
+	OpenAPI    *gin.RouterGroup
 }
 
 // InitGroups 初始化全局路由组
@@ -29,6 +30,7 @@ func InitGroups(engine *gin.Engine, logger *zap.Logger, container *container.Ser
 		Public:     engine.Group("/public"),
 		DataCenter: engine.Group("/api/datacenter"),
 		V1:         engine.Group("/api/v1"),
+		OpenAPI:    engine.Group("/openapi"),
 	}
 	// 注册健康检查路由
 	engine.GET("/health", func(c *gin.Context) {

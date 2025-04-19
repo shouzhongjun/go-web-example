@@ -1,97 +1,221 @@
-# 定义变量
+# 项目信息
 APP_NAME := my-app
+VERSION := $(shell git rev-parse --abbrev-ref HEAD)
+BUILD_TIME := $(shell date '+%Y-%m-%d %H:%M:%S')
+COMMIT_SHA := $(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+
+# 目录结构
 BUILD_DIR := build
 SRC_DIR := ./cmd/app
 MAIN_FILE := $(SRC_DIR)/main.go
-LINUX_X86_BIN := $(BUILD_DIR)/$(APP_NAME)-linux-x86
-MAC_ARM_BIN := $(BUILD_DIR)/$(APP_NAME)-mac-arm
+DIST_DIR := dist
+
+# 输出文件
+LINUX_AMD64_BIN := $(BUILD_DIR)/$(APP_NAME)-linux-amd64
+LINUX_ARM64_BIN := $(BUILD_DIR)/$(APP_NAME)-linux-arm64
+MAC_AMD64_BIN := $(BUILD_DIR)/$(APP_NAME)-darwin-amd64
+MAC_ARM64_BIN := $(BUILD_DIR)/$(APP_NAME)-darwin-arm64
 
 # Go 工具链
 GO := go
 GOFMT := gofmt
 GOLINT := golangci-lint
+GOTEST := go test
+TIMEOUT := 5m
+
+# 编译标记
+LDFLAGS := -ldflags="-X 'main.Version=$(VERSION)' -X 'main.BuildTime=$(BUILD_TIME)' -X 'main.CommitSHA=$(COMMIT_SHA)'"
+GOBUILD := CGO_ENABLED=0 $(GO) build $(LDFLAGS)
+
+# 颜色输出
+BLUE := \033[34m
+GREEN := \033[32m
+RED := \033[31m
+YELLOW := \033[33m
+RESET := \033[0m
 
 # 默认目标
 .PHONY: all
-all: build
+all: clean build test lint
 
-# 构建适配当前平台的可执行文件
+# 构建所有平台
+.PHONY: build-all
+build-all: build-linux-amd64 build-linux-arm64 build-mac-amd64 build-mac-arm64
+
+# 各平台构建目标
+.PHONY: build-linux-amd64
+build-linux-amd64: wire
+	@printf "$(BLUE)>> Building for Linux AMD64...$(RESET)\n"
+	@mkdir -p $(BUILD_DIR)
+	GOOS=linux GOARCH=amd64 $(GOBUILD) -o $(LINUX_AMD64_BIN) cmd/app/main.go cmd/app/wire_gen.go
+
+.PHONY: build-linux-arm64
+build-linux-arm64: wire
+	@printf "$(BLUE)>> Building for Linux ARM64...$(RESET)\n"
+	@mkdir -p $(BUILD_DIR)
+	GOOS=linux GOARCH=arm64 $(GOBUILD) -o $(LINUX_ARM64_BIN) cmd/app/main.go cmd/app/wire_gen.go
+
+.PHONY: build-mac-amd64
+build-mac-amd64: wire
+	@printf "$(BLUE)>> Building for macOS AMD64...$(RESET)\n"
+	@mkdir -p $(BUILD_DIR)
+	GOOS=darwin GOARCH=amd64 $(GOBUILD) -o $(MAC_AMD64_BIN) cmd/app/main.go cmd/app/wire_gen.go
+
+.PHONY: build-mac-arm64
+build-mac-arm64: wire
+	@printf "$(BLUE)>> Building for macOS ARM64...$(RESET)\n"
+	@mkdir -p $(BUILD_DIR)
+	GOOS=darwin GOARCH=arm64 $(GOBUILD) -o $(MAC_ARM64_BIN) cmd/app/main.go cmd/app/wire_gen.go
+
+# 构建当前平台
 .PHONY: build
-build:
-	@echo ">> Building for local platform (macOS ARM)..."
+build: wire
+	@printf "$(BLUE)>> Building for current platform...$(RESET)\n"
 	@mkdir -p $(BUILD_DIR)
-	GOOS=$(shell go env GOOS) GOARCH=$(shell go env GOARCH) $(GO) build -o $(MAC_ARM_BIN) $(MAIN_FILE)
+	$(GOBUILD) -o $(BUILD_DIR)/$(APP_NAME) cmd/app/main.go cmd/app/wire_gen.go
 
-# 交叉编译：Linux x86
-.PHONY: build-linux-x86
-build-linux-x86:
-	@echo ">> Building for Linux x86..."
-	@mkdir -p $(BUILD_DIR)
-	GOOS=linux GOARCH=amd64 $(GO) build -o $(LINUX_X86_BIN) $(MAIN_FILE)
+# 生成 wire
+.PHONY: wire
+wire:
+	@printf "$(BLUE)>> Generating wire_gen.go...$(RESET)\n"
+	@which wire > /dev/null || (printf "$(YELLOW)wire is not installed. Installing...$(RESET)\n" && go install github.com/google/wire/cmd/wire@latest)
+	@cd cmd/app && wire
 
-# 运行应用程序 (macOS 本地)
+# 开发模式运行（支持热重载）
+.PHONY: dev
+dev: wire
+	@printf "$(GREEN)>> Running in development mode...$(RESET)\n"
+	@which air > /dev/null || (printf "$(YELLOW)air is not installed. Installing...$(RESET)\n" && go install github.com/air-verse/air@latest)
+	@mkdir -p tmp
+	@if ! which air > /dev/null; then \
+		printf "$(RED)Failed to install air. Please install it manually: go install github.com/air-verse/air@latest$(RESET)\n"; \
+		exit 1; \
+	fi
+	air
+
+# 运行应用
 .PHONY: run
-run:
-	@echo ">> Running the application (local)..."
-	$(GO) run $(MAIN_FILE)
+run: wire
+	@printf "$(GREEN)>> Running application...$(RESET)\n"
+	@$(GO) run cmd/app/main.go cmd/app/wire_gen.go
+
+# 代码质量检查
+.PHONY: lint
+lint:
+	@printf "$(BLUE)>> Running linter...$(RESET)\n"
+	@which $(GOLINT) > /dev/null || (printf "$(YELLOW)golangci-lint is not installed. Installing...$(RESET)\n" && curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin)
+	@if ! which $(GOLINT) > /dev/null; then \
+		printf "$(RED)Failed to install golangci-lint. Please install it manually: go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest$(RESET)\n"; \
+		exit 1; \
+	fi
+	$(GOLINT) run ./... --timeout=$(TIMEOUT)
 
 # 格式化代码
 .PHONY: fmt
 fmt:
-	@echo ">> Formatting code..."
-	$(GOFMT) -w .
+	@printf "$(BLUE)>> Formatting code...$(RESET)\n"
+	$(GOFMT) -s -w .
 
-# 静态分析与代码检查
-.PHONY: lint
-lint:
-	@echo ">> Linting code..."
-	$(GOLINT) run ./...
-
-# 运行单元测试
+# 测试
 .PHONY: test
 test:
-	@echo ">> Running tests..."
-	$(GO) test -v -cover ./...
+	@printf "$(BLUE)>> Running tests...$(RESET)\n"
+	$(GOTEST) -v -race -cover ./...
 
-# 生成代码覆盖率报告
-.PHONY: cover
-cover:
-	@echo ">> Running tests with coverage..."
-	$(GO) test -coverprofile=coverage.out ./...
+# 生成测试覆盖率报告
+.PHONY: coverage
+coverage:
+	@printf "$(BLUE)>> Generating coverage report...$(RESET)\n"
+	$(GOTEST) -coverprofile=coverage.out ./...
 	$(GO) tool cover -html=coverage.out -o coverage.html
+	@printf "$(GREEN)Coverage report generated: coverage.html$(RESET)\n"
+
+# 依赖管理
+.PHONY: deps
+deps:
+	@printf "$(BLUE)>> Installing dependencies...$(RESET)\n"
+	$(GO) mod download
+	$(GO) mod tidy
+
+# 更新依赖
+.PHONY: deps-update
+deps-update:
+	@printf "$(BLUE)>> Updating dependencies...$(RESET)\n"
+	$(GO) get -u ./...
+	$(GO) mod tidy
+
+# 生成发布包
+.PHONY: dist
+dist: build-all
+	@printf "$(BLUE)>> Creating distribution packages...$(RESET)\n"
+	@mkdir -p $(DIST_DIR)
+	@for bin in $(BUILD_DIR)/*; do \
+		if [ -f "$$bin" ]; then \
+			tar czf $(DIST_DIR)/$$(basename $$bin).tar.gz -C $(BUILD_DIR) $$(basename $$bin); \
+			printf "$(GREEN)Created: $(DIST_DIR)/$$(basename $$bin).tar.gz$(RESET)\n"; \
+		fi \
+	done
 
 # 清理构建文件
 .PHONY: clean
 clean:
-	@echo ">> Cleaning up..."
-	@rm -rf $(BUILD_DIR) coverage.out coverage.html
+	@printf "$(YELLOW)>> Cleaning up...$(RESET)\n"
+	@rm -rf $(BUILD_DIR) $(DIST_DIR) coverage.out coverage.html
 
-# 安装依赖
-.PHONY: deps
-deps:
-	@echo ">> Installing dependencies..."
-	$(GO) mod tidy
+# 版本信息
+.PHONY: version
+version:
+	@printf "$(BLUE)Version: $(VERSION)\n"
+	@printf "Build Time: $(BUILD_TIME)\n"
+	@printf "Commit: $(COMMIT_SHA)$(RESET)\n"
 
-# 更新依赖
-.PHONY: update-deps
-update-deps:
-	@echo ">> Updating dependencies..."
-	$(GO) get -u ./...
+# 检查工具安装
+.PHONY: check-tools
+check-tools:
+	@printf "$(BLUE)>> Checking required tools...$(RESET)\n"
+	@which $(GOLINT) > /dev/null || printf "$(YELLOW)golangci-lint is not installed. Run: go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest$(RESET)\n"
+	@which air > /dev/null || printf "$(YELLOW)air is not installed. Run: go install github.com/air-verse/air@latest$(RESET)\n"
+
+# 生成swagger文档
+.PHONY: swagger
+swagger:
+	@printf "$(BLUE)>> Generating swagger docs...$(RESET)\n"
+	@which swag > /dev/null || (printf "$(YELLOW)swag is not installed. Installing...$(RESET)\n" && go install github.com/swaggo/swag/cmd/swag@latest)
+	@if ! which swag > /dev/null; then \
+		printf "$(RED)Failed to install swag. Please install it manually: go install github.com/swaggo/swag/cmd/swag@latest$(RESET)\n"; \
+		exit 1; \
+	fi
+	@swag init -g cmd/app/main.go -o ./docs/swagger
+	@if [ $? -ne 0 ]; then \
+		printf "$(RED)Failed to generate swagger docs. Please check your code annotations.$(RESET)\n"; \
+		exit 1; \
+	fi
+	@printf "$(GREEN)Swagger docs generated in ./docs$(RESET)\n"
+	@printf "$(GREEN)Swagger UI: http://localhost:8080/api/swagger/index.html$(RESET)\n"
+	@printf "$(GREEN)Swagger JSON: http://localhost:8080/api/swagger/doc.json$(RESET)\n"
 
 # 帮助信息
 .PHONY: help
 help:
-	@echo "Makefile 使用说明"
-	@echo
-	@echo "可用命令:"
-	@echo "  make build           构建本地 (macOS ARM) 平台的应用程序"
-	@echo "  make build-linux-x86 交叉编译适配 Linux x86 的应用程序"
-	@echo "  make run             运行本地应用程序"
-	@echo "  make fmt             格式化代码"
-	@echo "  make lint            执行代码静态检查"
-	@echo "  make test            运行单元测试"
-	@echo "  make cover           生成覆盖率报告"
-	@echo "  make clean           清理构建文件"
-	@echo "  make deps            安装依赖"
-	@echo "  make update-deps     更新依赖到最新版本"
-	@echo "  make help            查看帮助信息"
+	@printf "$(BLUE)可用命令:$(RESET)\n"
+	@printf "$(GREEN)基础命令:$(RESET)\n"
+	@printf "  make build         - 构建当前平台的可执行文件\n"
+	@printf "  make run           - 运行应用程序\n"
+	@printf "  make dev           - 开发模式运行（支持热重载）\n"
+	@printf "  make clean         - 清理构建文件\n"
+	@printf "  make wire          - 生成依赖注入代码\n"
+	@printf "\n$(GREEN)构建相关:$(RESET)\n"
+	@printf "  make build-all     - 构建所有支持的平台\n"
+	@printf "  make dist          - 创建发布包\n"
+	@printf "\n$(GREEN)开发工具:$(RESET)\n"
+	@printf "  make fmt           - 格式化代码\n"
+	@printf "  make lint          - 运行代码检查\n"
+	@printf "  make test          - 运行测试\n"
+	@printf "  make coverage      - 生成测试覆盖率报告\n"
+	@printf "\n$(GREEN)依赖管理:$(RESET)\n"
+	@printf "  make deps          - 安装依赖\n"
+	@printf "  make deps-update   - 更新依赖\n"
+	@printf "\n$(GREEN)其他:$(RESET)\n"
+	@printf "  make version       - 显示版本信息\n"
+	@printf "  make check-tools   - 检查必要工具是否安装\n"
+	@printf "  make swagger       - 生成swagger文档\n"

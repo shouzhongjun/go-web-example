@@ -29,3 +29,8 @@ go.work.sum
 
 # env file
 .env
+
+# Air hot reload
+tmp/
+air.log
+.air.toml.tmp*

@@ -179,6 +179,62 @@ docker run -d -p 8080:8080 go-web-example:latest
 kubectl apply -f deploy/kubernetes/
 ```
 
+## 自动构建与打包
+
+本项目使用 GitHub Actions 实现自动构建和打包。每当代码推送到主分支或创建 Pull Request 时，自动构建流程会被触发。
+
+### 自动构建流程
+
+1. 检出代码
+2. 设置 Go 环境
+3. 安装依赖
+4. 生成 Wire 依赖注入代码
+5. 运行测试
+6. 执行代码质量检查
+7. 生成 Swagger 文档
+8. 构建多平台二进制文件
+9. 创建分发包
+10. 上传构建产物
+
+### 支持的平台
+
+自动构建支持以下平台：
+- Linux AMD64
+- Linux ARM64
+- macOS AMD64
+- macOS ARM64
+
+### 发布流程
+
+当创建新的 Git 标签（tag）时，GitHub Actions 会自动创建一个新的 GitHub Release，并将构建产物作为附件上传。
+
+使用以下命令创建新版本：
+
+```bash
+git tag v1.0.0
+git push origin v1.0.0
+```
+
+### 手动触发构建
+
+您也可以在 GitHub 仓库的 Actions 页面手动触发构建流程。
+
+### 下载构建产物
+
+每次工作流运行后，构建产物会通过 actions/upload-artifact@v3 被上传并保存在 GitHub Actions 中。您可以通过以下步骤下载这些构建产物：
+
+1. 访问您的 GitHub 仓库
+2. 点击 "Actions" 标签页
+3. 从列表中选择一个工作流运行记录
+4. 在工作流运行详情页面，滚动到页面底部的 "Artifacts" 部分
+5. 点击 "binaries" 下载包含所有构建产物的 zip 文件
+
+下载的 zip 文件包含：
+- 所有平台的二进制文件 (`build/my-app-*`)
+- 所有平台的分发包 (`dist/*.tar.gz`)
+
+注意：构建产物在 GitHub 上的保存期限为 90 天。
+
 ## 贡献指南
 
 1. Fork 项目

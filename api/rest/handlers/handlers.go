@@ -5,6 +5,7 @@ import (
 	_ "goWebExample/api/protobuf/users"
 	_ "goWebExample/api/rest/handlers/datacenter"
 	_ "goWebExample/api/rest/handlers/ly_stop"
+	_ "goWebExample/api/rest/handlers/openapi"
 	_ "goWebExample/api/rest/handlers/stream"
 	_ "goWebExample/api/rest/handlers/user"
 )

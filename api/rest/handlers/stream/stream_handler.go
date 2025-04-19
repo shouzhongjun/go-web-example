@@ -88,7 +88,10 @@ func (h *StreamHandler) HandleStream(c *gin.Context) {
 		}
 
 		// 发送SSE格式的数据
-		c.Writer.Write([]byte("data: " + string(jsonData) + "\n\n"))
+		_, err = c.Writer.Write([]byte("data: " + string(jsonData) + "\n\n"))
+		if err != nil {
+			return
+		}
 		c.Writer.Flush()
 	}
 }

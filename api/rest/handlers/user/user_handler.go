@@ -2,7 +2,7 @@ package user
 
 import (
 	"goWebExample/api/rest/handlers/user/request"
-	"goWebExample/internal/middleware"
+	"goWebExample/internal/pkg/middleware"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -91,7 +91,6 @@ func (h *UserHandler) GetUserDetail(c *gin.Context) {
 	}
 
 	response.SuccessWithData(c, userDetail)
-	return
 }
 
 // CreateUser godoc
@@ -226,7 +225,6 @@ func (h *UserHandler) LoginHandler(ctx *gin.Context) {
 		return
 	}
 	response.SuccessWithData(ctx, users)
-	return
 }
 
 // RegisterRoutes 注册用户相关路由
@@ -250,10 +248,10 @@ func (h *UserHandler) RegisterRoutes(apiGroup *gin.RouterGroup) {
 		// 需要认证的路由
 		auth := userGroup.Use(middleware.JWTAuthMiddleware(srv.GetJWTManager(), h.logger))
 		{
-			auth.GET("/:userId", h.GetUserDetail)
+			auth.GET("/profile/:userId", h.GetUserDetail)
 			auth.POST("", h.CreateUser)
-			auth.PUT("/:userId", h.UpdateUser)
-			auth.DELETE("/:userId", h.DeleteUser)
+			//auth.PUT("/:userId", h.UpdateUser)
+			//auth.DELETE("/:userId", h.DeleteUser)
 			auth.GET("", h.ListUsers)
 		}
 	}

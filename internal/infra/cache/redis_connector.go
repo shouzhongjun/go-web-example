@@ -60,7 +60,7 @@ func (c *RedisConnector) Connect(ctx context.Context) error {
 	defer cancel()
 
 	if err := client.Ping(pingCtx).Err(); err != nil {
-		return fmt.Errorf("Redis连接失败: %w", err)
+		return fmt.Errorf("redis连接失败: %w", err)
 	}
 
 	c.client = client

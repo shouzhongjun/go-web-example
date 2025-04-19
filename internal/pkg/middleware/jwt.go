@@ -14,6 +14,7 @@ import (
 // JWTAuthMiddleware JWT认证中间件
 func JWTAuthMiddleware(jwtManager *jwt.JwtManager, logger *zap.Logger) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		logger.Info("JWT认证中间件", zap.String("Method", c.Request.Method), zap.String("Path", c.Request.URL.Path))
 		// 从 Header 中获取 token
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
@@ -25,7 +26,7 @@ func JWTAuthMiddleware(jwtManager *jwt.JwtManager, logger *zap.Logger) gin.Handl
 
 		// 检查 token 格式
 		parts := strings.SplitN(authHeader, " ", 2)
-		if !(len(parts) == 2 && parts[0] == "Bearer") {
+		if len(parts) != 2 || parts[0] != "Bearer" {
 			logger.Warn("token格式错误")
 			c.JSON(http.StatusUnauthorized, response.Fail(http.StatusUnauthorized, "token格式错误"))
 			c.Abort()

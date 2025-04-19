@@ -11,6 +11,7 @@ const (
 	Public     RouteGroup = "public"     // 公开路由组
 	V1         RouteGroup = "v1"         // API v1 版本路由组
 	DataCenter RouteGroup = "datacenter" // 数据中心路由组
+	OpenAPI    RouteGroup = "openapi"
 )
 
 // Handler 处理器接口

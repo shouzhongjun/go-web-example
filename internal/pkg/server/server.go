@@ -123,6 +123,15 @@ func (s *HTTPServer) Shutdown(ctx context.Context) error {
 	defer shutdownCancel()
 	s.container.Shutdown(shutdownCtx)
 
+	// 关闭应用程序（包括追踪器）
+	if s.app != nil {
+		appCtx, appCancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer appCancel()
+		if err := s.app.Shutdown(appCtx); err != nil {
+			s.logger.Error("关闭应用程序失败", zap.Error(err))
+		}
+	}
+
 	s.logger.Info("HTTP 服务器已关闭")
 	return nil
 }

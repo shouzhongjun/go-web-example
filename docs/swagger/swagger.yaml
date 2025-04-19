@@ -1,4 +1,4 @@
-basePath: /api
+basePath: /ma
 definitions:
   ly_stop.DataMock:
     properties:
@@ -103,6 +103,49 @@ info:
   title: GoWebExample API
   version: "1.0"
 paths:
+  /data:
+    get:
+      consumes:
+      - application/json
+      description: 获取示例数据
+      parameters:
+      - description: 数据ID
+        in: query
+        name: id
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: 获取数据
+      tags:
+      - openapi
+  /status:
+    get:
+      consumes:
+      - application/json
+      description: 获取API服务状态信息
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: 获取API状态
+      tags:
+      - openapi
   /users:
     get:
       consumes:

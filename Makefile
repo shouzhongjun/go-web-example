@@ -167,6 +167,15 @@ check-tools:
 	@which $(GOLINT) > /dev/null || printf "$(YELLOW)golangci-lint is not installed. Run: go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest$(RESET)\n"
 	@which air > /dev/null || printf "$(YELLOW)air is not installed. Run: go install github.com/air-verse/air@latest$(RESET)\n"
 
+# 生成swagger文档
+.PHONY: swagger
+swagger:
+	@printf "$(BLUE)>> Generating swagger docs...$(RESET)\n"
+	@which swag > /dev/null || go install github.com/swaggo/swag/cmd/swag@latest
+	@swag init --parseDependency --parseInternal --output ./docs
+	@printf "$(GREEN)Swagger docs generated in ./docs$(RESET)\n"
+	@printf "$(GREEN)Swagger UI: http://localhost:8080/swagger/index.html$(RESET)\n"
+	@printf "$(GREEN)Swagger JSON: http://localhost:8080/swagger/doc.json$(RESET)\n"
 # 帮助信息
 .PHONY: help
 help:

@@ -16,6 +16,9 @@ import (
 	"go.uber.org/zap"
 )
 
+// 存储日志清理函数
+var loggerCleanup func()
+
 // InitTracer 初始化链路追踪
 func InitTracer(cfg *configs.AllConfig, logger *zap.Logger) (*sdktrace.TracerProvider, error) {
 	if !cfg.Trace.Enable {
@@ -30,8 +33,16 @@ func InitTracer(cfg *configs.AllConfig, logger *zap.Logger) (*sdktrace.TracerPro
 		return nil, fmt.Errorf("tracer config is nil")
 	}
 
+	// 设置自定义日志记录器，将标准日志重定向到zap
+	loggerCleanup = SetupOtelLogger(logger)
+
 	exp, err := createOTLPExporter(cfg.Trace)
 	if err != nil {
+		// 确保在出错时恢复原始日志设置
+		if loggerCleanup != nil {
+			loggerCleanup()
+			loggerCleanup = nil
+		}
 		return nil, err
 	}
 
@@ -123,7 +134,16 @@ func Shutdown(ctx context.Context, cfg *ShutdownConfig) error {
 	shutdownCtx, cancel := context.WithTimeout(ctx, cfg.Timeout)
 	defer cancel()
 
-	if err := cfg.Provider.Shutdown(shutdownCtx); err != nil {
+	// 关闭追踪器
+	err := cfg.Provider.Shutdown(shutdownCtx)
+
+	// 清理日志记录器
+	if loggerCleanup != nil {
+		loggerCleanup()
+		loggerCleanup = nil
+	}
+
+	if err != nil {
 		cfg.Logger.Error("关闭追踪器失败", zap.Error(err))
 		return errors.New("关闭追踪器失败: " + err.Error())
 	}

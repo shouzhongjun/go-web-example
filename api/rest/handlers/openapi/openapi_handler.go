@@ -48,8 +48,8 @@ func (h *OpenAPIService) GetRouteGroup() handlers.RouteGroup {
 // @Summary      获取API状态
 // @Description  获取API服务状态信息
 // @Tags         openapi
-// @Accept       JSON
-// @Produce      JSON
+// @Accept       json
+// @Produce      json
 // @Success      200  {object}  response.Response
 // @Failure      401  {object}  response.Response
 // @Router       /status [get]
@@ -65,8 +65,8 @@ func (h *OpenAPIService) GetStatus(c *gin.Context) {
 // @Summary      获取数据
 // @Description  获取示例数据
 // @Tags         openapi
-// @Accept       JSON
-// @Produce      JSON
+// @Accept       json
+// @Produce      json
 // @Param        id query string false "数据ID"
 // @Success      200  {object}  response.Response
 // @Failure      401  {object}  response.Response

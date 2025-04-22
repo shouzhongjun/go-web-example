@@ -57,7 +57,7 @@ func (h *InfoService) GetInfo(c *gin.Context) {
 		"name":      "go-server-rest-api",
 		"version":   version.GetVersion(),
 		"buildTime": version.GetBuildTime(),
-		"commitSHA": version.CommitSHA,
+		"commitSHA": version.GetCommitSHA(),
 		"status":    "running",
 	})
 }

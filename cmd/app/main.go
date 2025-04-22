@@ -10,18 +10,28 @@ import (
 
 	_ "goWebExample/docs/swagger" // 导入 swagger docs
 	"goWebExample/internal/configs"
+	"goWebExample/internal/version"
 )
 
 // 版本信息，通过 -ldflags 注入
+// 这些变量保留用于向后兼容，实际使用 version 包中的变量
 var (
 	Version   = "dev"
 	BuildTime = "unknown"
 	CommitSHA = "unknown"
 )
 
-// @title           GoWebExample API
-// @version         1.0
-// @description     This is a sample server for GoWebExample.
+func init() {
+	// 初始化 version 包中的版本信息
+	v, bt, sha := getRuntimeVersionInfo()
+	version.Version = v
+	version.BuildTime = bt
+	version.CommitSHA = sha
+}
+
+// @title GoWebExample API
+// @version 1.0
+// @description This is a sample server for GoWebExample.
 // @termsOfService  http://swagger.io/terms/
 
 // @contact.name   API Support
@@ -76,10 +86,10 @@ func main() {
 	flag.Parse()
 
 	// 获取版本信息
-	version, buildTime, commitSHA := getRuntimeVersionInfo()
+	versionInfo, buildTime, commitSHA := getRuntimeVersionInfo()
 
 	// 输出版本信息
-	fmt.Printf("Version   : %s\n", version)
+	fmt.Printf("Version   : %s\n", versionInfo)
 	fmt.Printf("Build Time: %s\n", buildTime)
 	fmt.Printf("Git SHA   : %s\n", commitSHA)
 	fmt.Println("----------------------------------------")

@@ -61,6 +61,11 @@ type Log struct {
 	Prefix        string `yaml:"prefix"`
 	Path          string `yaml:"path"`
 	PrintParam    bool   `yaml:"printParam"`
+	// 日志文件压缩配置
+	MaxSize    int  `yaml:"maxSize"`    // 单个日志文件最大大小，单位MB，默认100MB
+	MaxBackups int  `yaml:"maxBackups"` // 保留的旧日志文件最大数量，默认保留所有
+	MaxAge     int  `yaml:"maxAge"`     // 保留的旧日志文件最大天数，默认保留所有
+	Compress   bool `yaml:"compress"`   // 是否压缩旧日志文件，默认不压缩
 }
 
 type Cors struct {

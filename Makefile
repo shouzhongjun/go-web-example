@@ -24,7 +24,7 @@ GOTEST := go test
 TIMEOUT := 5m
 
 # 编译标记
-LDFLAGS := -ldflags="-X 'main.Version=$(VERSION)' -X 'main.BuildTime=$(BUILD_TIME)' -X 'main.CommitSHA=$(COMMIT_SHA)'"
+LDFLAGS := -ldflags="-X 'main.Version=$(VERSION)' -X 'main.BuildTime=$(BUILD_TIME)' -X 'main.CommitSHA=$(COMMIT_SHA)' -X 'goWebExample/internal/version.Version=$(VERSION)' -X 'goWebExample/internal/version.BuildTime=$(BUILD_TIME)' -X 'goWebExample/internal/version.CommitSHA=$(COMMIT_SHA)'"
 GOBUILD := CGO_ENABLED=0 $(GO) build $(LDFLAGS)
 
 # 颜色输出

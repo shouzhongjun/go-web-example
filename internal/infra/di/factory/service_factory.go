@@ -106,7 +106,7 @@ func (f *Factory) initializeService(ctx context.Context, name string) error {
 		return nil
 	}
 
-	f.logger.Info("正在初始化服务连接", zap.String("service", name))
+	f.logger.Info("正在初始化服务连接: " + name, zap.String("service", name))
 	return getConnector.Connect(ctx)
 }
 

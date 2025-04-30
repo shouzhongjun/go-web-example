@@ -16,10 +16,35 @@ import (
 	"go.uber.org/zap"
 
 	"goWebExample/internal/configs"
+	"goWebExample/internal/infra/cache"
+	"goWebExample/internal/infra/di/container"
 )
 
+// GetRedisConnector 从容器中获取Redis连接器
+func getRedisConnector(container *container.ServiceContainer, logger *zap.Logger) *cache.RedisConnector {
+	if container == nil || container.GetFactory() == nil {
+		logger.Warn("容器或工厂为空，无法获取Redis连接器")
+		return nil
+	}
+
+	connector := container.GetFactory().GetConnector("redis")
+	if connector == nil {
+		logger.Warn("Redis连接器不存在")
+		return nil
+	}
+
+	redisConn, ok := connector.(*cache.RedisConnector)
+	if !ok {
+		logger.Warn("Redis连接器类型不匹配")
+		return nil
+	}
+
+	logger.Info("获取到Redis连接器，将用于限流中间件")
+	return redisConn
+}
+
 // LoadMiddleware 加载所有中间件
-func LoadMiddleware(config *configs.AllConfig, logger *zap.Logger, engine *gin.Engine) {
+func LoadMiddleware(config *configs.AllConfig, logger *zap.Logger, engine *gin.Engine, container *container.ServiceContainer) {
 	// 配置 Gin 路由选项
 	engine.RedirectTrailingSlash = true
 	engine.RedirectFixedPath = true
@@ -47,7 +72,9 @@ func LoadMiddleware(config *configs.AllConfig, logger *zap.Logger, engine *gin.E
 	// 请求超时中间件
 	engine.Use(TimeoutMiddleware(10 * time.Second))
 
-	engine.Use(RateLimitMiddleware(config))
+	// 限流中间件
+	redisConn := getRedisConnector(container, logger)
+	engine.Use(RateLimitMiddleware(config, redisConn))
 
 	// 使用utils包中的全局验证器
 	setupValidator(logger)

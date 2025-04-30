@@ -10,6 +10,7 @@ import (
 
 	_ "goWebExample/docs/swagger" // 导入 swagger docs
 	"goWebExample/internal/configs"
+	_ "goWebExample/internal/service/scheduler" // 导入定时调度服务
 	"goWebExample/internal/version"
 )
 

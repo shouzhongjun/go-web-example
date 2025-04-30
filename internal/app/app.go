@@ -46,8 +46,8 @@ func NewGin(config *configs.AllConfig, logger *zap.Logger) *gin.Engine {
 	// 创建引擎
 	engine := gin.New()
 
-	// 加载所有中间件
-	middleware.LoadMiddleware(config, logger, engine)
+	// 加载所有中间件（不传入container，在NewApp中处理）
+	middleware.LoadMiddleware(config, logger, engine, nil)
 
 	return engine
 }
@@ -74,6 +74,9 @@ func NewApp(
 
 	// 初始化全局路由组
 	server.InitGroups(engine, logger, container)
+
+	// 重新加载中间件，传入container以便获取Redis连接器
+	middleware.LoadMiddleware(config, logger, engine, container)
 
 	// 为OpenAPI路由组应用认证中间件
 	if config.OpenAPI.Enable {

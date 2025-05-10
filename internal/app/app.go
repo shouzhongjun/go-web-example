@@ -32,7 +32,7 @@ type App struct {
 }
 
 // NewGin 创建 Gin 引擎
-func NewGin(config *configs.AllConfig, logger *zap.Logger) *gin.Engine {
+func NewGin(config *configs.AllConfig) *gin.Engine {
 	switch config.Log.Level {
 	case "debug":
 		gin.SetMode(gin.DebugMode)
@@ -42,8 +42,6 @@ func NewGin(config *configs.AllConfig, logger *zap.Logger) *gin.Engine {
 		// 默认使用 release 模式，这样更安全
 		gin.SetMode(gin.ReleaseMode)
 	}
-
-	// 创建引擎
 	engine := gin.New()
 	return engine
 }
@@ -119,8 +117,8 @@ func NewApp(
 		tp:         tp,
 	}
 
-	// 设置 Shutdowner
-	httpServer.SetShutdowner(app)
+	// 设置 ShutdownHandler
+	httpServer.SetShutdownHandler(app)
 
 	return app
 }
@@ -143,7 +141,5 @@ func (app *App) Shutdown(ctx context.Context) error {
 		app.logger.Error("关闭链路追踪失败", zap.Error(err))
 		return err
 	}
-
-	// 注意：HTTP 服务器的关闭由 HTTPServer.Shutdown 处理
 	return nil
 }

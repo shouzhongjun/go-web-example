@@ -54,11 +54,12 @@ func (h *InfoService) GetRouteGroup() handlers.RouteGroup {
 func (h *InfoService) GetInfo(c *gin.Context) {
 	h.logger.Info("获取服务信息")
 	response.SuccessWithData(c, gin.H{
-		"name":      "go-server-rest-api",
-		"version":   version.GetVersion(),
-		"buildTime": version.GetBuildTime(),
-		"commitSHA": version.GetCommitSHA(),
-		"status":    "running",
+		"name":        "go-server-rest-api",
+		"version":     version.GetVersion(),
+		"buildTime":   version.GetBuildTime(),
+		"commitSHA":   version.GetCommitSHA(),
+		"status":      "running",
+		"versionInfo": version.GetVersionInfo(),
 	})
 }
 

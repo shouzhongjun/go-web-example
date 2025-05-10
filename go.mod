@@ -11,6 +11,7 @@ require (
 	github.com/golang-jwt/jwt/v5 v5.2.1
 	github.com/google/uuid v1.6.0
 	github.com/google/wire v0.6.0
+	github.com/robfig/cron/v3 v3.0.0
 	github.com/rs/xid v1.6.0
 	github.com/segmentio/kafka-go v0.4.47
 	github.com/spf13/viper v1.19.0

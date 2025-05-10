@@ -90,7 +90,7 @@ func (c *DBConnector) Connect(ctx context.Context) error {
 	}
 
 	c.Logger().Info("正在连接MySQL数据库",
-		zap.String("dsn", maskDSN(c.config.DSN())))
+		zap.String("dsn", maskDSN(c.config.DSN(), c.config.LogLevel)))
 
 	// 根据项目配置的日志级别设置 Gorm 日志级别
 	gormLogLevel := gormLogger.GetGormLogLevel(c.config.LogLevel)
@@ -211,7 +211,10 @@ func (c *DBConnector) Transaction(ctx context.Context, fn func(tx *gorm.DB) erro
 }
 
 // maskDSN 对DSN中的敏感信息进行掩码处理
-func maskDSN(dsn string) string {
+func maskDSN(dsn string, logLevel string) string {
+	if logLevel == "debug" {
+		return dsn
+	}
 	if dsn == "" {
 		return ""
 	}

@@ -117,6 +117,22 @@ etcd:
     interval: 10
 ```
 
+### 日志配置
+```yaml
+log:
+  prefix: go-server-rest-api
+  enableConsole: true
+  enableFile: true
+  level: debug
+  path: ./logs
+  printParam: true
+  # 日志文件压缩配置
+  maxSize: 100     # 单个日志文件最大大小，单位MB，默认100MB
+  maxBackups: 10   # 保留的旧日志文件最大数量，默认保留所有
+  maxAge: 30       # 保留的旧日志文件最大天数，默认保留所有
+  compress: true   # 是否压缩旧日志文件，默认不压缩
+```
+
 ## API 文档
 
 ### 健康检查

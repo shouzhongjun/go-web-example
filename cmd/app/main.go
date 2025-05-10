@@ -10,7 +10,7 @@ import (
 )
 
 func init() {
-	// 初始化 version 包中的版本信息
+	// 避免重复调用获取版本信息
 	version.Version, version.BuildTime, version.CommitSHA = version.GetRuntimeVersionInfo()
 }
 
@@ -38,26 +38,21 @@ func init() {
 func main() {
 	flag.Parse()
 
-	// 获取并输出版本信息
-	v, bt, sha := version.GetRuntimeVersionInfo()
-	fmt.Printf("Version   : %s\n", v)
-	fmt.Printf("Build Time: %s\n", bt)
-	fmt.Printf("Git SHA   : %s\n", sha)
+	// 直接使用已经在 init 函数中设置好的版本信息
+	fmt.Printf("Version   : %s\n", version.Version)
+	fmt.Printf("Build Time: %s\n", version.BuildTime)
+	fmt.Printf("Git SHA   : %s\n", version.CommitSHA)
 	fmt.Println("----------------------------------------")
 
-	// 读取配置文件
+	// 读取配置文件并进行错误处理
 	config := configs.ReadConfig(configs.ConfigPath)
-	if config == nil {
-		log.Fatal("读取配置文件失败")
-	}
-
 	// 初始化并启动应用
 	app, err := InitializeApp(config)
 	if err != nil {
-		log.Fatal("初始化应用失败:", err)
+		log.Fatalf("初始化应用失败: %v", err)
 	}
 
 	if err := app.Run(); err != nil {
-		log.Fatal("启动应用失败:", err)
+		log.Fatalf("启动应用失败: %v", err)
 	}
 }

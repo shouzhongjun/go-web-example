@@ -2,7 +2,6 @@ package app
 
 import (
 	"context"
-	"fmt"
 	"log"
 
 	"github.com/gin-gonic/gin"
@@ -127,7 +126,7 @@ func NewApp(
 func (app *App) Run() error {
 	// 运行 HTTP 服务器（包含信号处理和优雅关闭）
 	if err := app.httpServer.RunServer(); err != nil {
-		return fmt.Errorf("运行 HTTP 服务器失败: %w", err)
+		return err
 	}
 
 	return nil

@@ -77,6 +77,9 @@ func (s *HTTPServer) RunServer() error {
 	// 初始化 Swagger
 	InitSwagger(s.config, s.logger)
 
+	// 创建错误通道，用于监听HTTP服务器启动错误
+	errChan := make(chan error, 1)
+
 	// 在 goroutine 中启动服务器
 	go func() {
 		s.logger.Info("HTTP服务器启动",
@@ -86,13 +89,21 @@ func (s *HTTPServer) RunServer() error {
 
 		if err := s.srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			s.logger.Error("HTTP服务器运行失败", zap.Error(err))
+			errChan <- err
 		}
 	}()
 
-	// 等待中断信号
+	// 等待中断信号或HTTP服务器错误
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
-	<-quit
+
+	// 等待中断信号或HTTP服务器错误
+	select {
+	case <-quit:
+		s.logger.Info("收到中断信号，正在关闭服务器...")
+	case err := <-errChan:
+		s.logger.Error("HTTP服务器启动失败，正在关闭服务...", zap.Error(err))
+	}
 
 	s.logger.Info("正在关闭服务器...")
 

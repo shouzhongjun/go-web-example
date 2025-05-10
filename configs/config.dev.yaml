@@ -40,7 +40,7 @@ trace:
   environment: "dev"                        # 环境（如 dev、prod）
   endpoint: "localhost:4317"         # 链路追踪服务器地址
   samplingRatio: 1.0                        # 采样率，1.0 表示全采样
-  enable: true                              # 是否启用链路追踪
+  enable: false                              # 是否启用链路追踪
   batchTimeout: "5s"                        # 批处理超时时间（支持如 5s、1m）
   maxBatchSize: 512                         # 最大批处理大小
   maxQueueSize: 2048                        # 最大队列大小
